@@ -52,7 +52,7 @@ data BoardState = BoardState
 -- | Tile state for an individual tile on the board
 data TileState = TileState
     [BoardLocation]   -- ^ Location of the tile on the board
-    PlayerID
+    PlayerID          -- ^ Owner of the tile
     -- TODO @kaylaox fill in the rest of what tile state is here
 
 
