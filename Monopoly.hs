@@ -41,6 +41,7 @@ data PlayerState = PlayerState
     PlayerID        -- ^ ID of the player
     Int             -- ^ Amount of Money the Player Has
     BoardLocation   -- ^ Which tile the player is currently situated on
+    -- hello world
     -- TODO @kaylaox fill in the rest of what player state is here
 
 -- | Board state for the entire game
