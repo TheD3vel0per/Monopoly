@@ -38,9 +38,11 @@ data PlayersState = PlayersState
 
 -- | Individual player state
 data PlayerState = PlayerState
-    PlayerID        -- ^ ID of the player
-    Int             -- ^ Amount of Money the Player Has
-    BoardLocation   -- ^ Which tile the player is currently situated on
+    PlayerID           -- ^ ID of the player
+    Int                -- ^ Amount of Money the Player Has
+    BoardLocation      -- ^ Which tile the player is currently situated on
+    InJail :: Boolean  -- ^ whether the player is in jail or not
+    [TileState]        -- ^ list of properties owned by the player
     -- TODO @kaylaox fill in the rest of what player state is here
 
 -- | Board state for the entire game
@@ -51,8 +53,13 @@ data BoardState = BoardState
 
 -- | Tile state for an individual tile on the board
 data TileState = TileState
-    [BoardLocation]   -- ^ Location of the tile on the board
-    PlayerID
+    [BoardLocation]     -- ^ Location of the tile on the board
+    PlayerID            -- ^ Owner of the tile
+    Int                 -- ^ Value of the tile
+    Int                 -- ^ Rent to be paid when landing on this tile/property
+    -- can add the ones below later for version 2 of UBC Monopoly
+    -- ChanceCard
+    -- CommunityChestCard 
     -- TODO @kaylaox fill in the rest of what tile state is here
 
 
