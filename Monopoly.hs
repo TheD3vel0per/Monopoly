@@ -1,3 +1,6 @@
+import Graphics.Gloss
+import Graphics.Gloss.Juicy
+
 {- |
 Module      :  Monopoly
 Description :  This is an implementation of the Monopoly game made by Devam
@@ -115,3 +118,10 @@ replaceTileState location newTileState (tile:rest) =
 --------------------------------
 -- Graphics
 --------------------------------
+loadBackground = loadJuicyPNG "board.png"
+
+--------------------------------
+-- Main
+--------------------------------
+main :: IO
+main = do
