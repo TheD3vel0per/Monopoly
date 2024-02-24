@@ -1,5 +1,4 @@
 # Monopoly
-
 **Game State**:
 - Players
 	- Which "items" they are

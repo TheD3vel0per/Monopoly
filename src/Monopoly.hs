@@ -10,14 +10,27 @@ Maintainer  :  devam@student.ubc.ca
 Stability   :  unstable
 Portability :  portable
 -}
-
+module Monopoly
+    (
+        PlayerID,
+        NullablePlayerID,
+        BoardLocation,
+        GameState,
+        PlayersState,
+        PlayerState,
+        BoardState,
+        OwnableTileState,
+        TileState,
+        TurnState,
+        findPlayerByID,
+        replacePlayerState,
+        findTileByLocation,
+        replaceTileState
+    ) where
 
 --------------------------------
 -- Data Definitions
 --------------------------------
-
--- | Type for Void
-newtype Void = Void Void
 
 -- | Type for the Unique Identifier of a Player
 type PlayerID = Int
