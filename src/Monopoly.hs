@@ -28,7 +28,6 @@ module Monopoly
         replaceTileState
     ) where
 
-
 --------------------------------
 -- Data Definitions
 --------------------------------
