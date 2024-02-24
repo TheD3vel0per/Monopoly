@@ -107,6 +107,36 @@ buyProperty playerID ps propertyName propertyCost =
         in updatedPlayer
     | otherwise = ps
 
+-- Find a player in the array by ID
+-- findPlayerByID :: PlayerID -> [PlayerState] -> Maybe PlayerState
+findPlayerByID _ [] = Nothing
+findPlayerByID id (p:ps)
+    | identifier p == id = Just p
+    | otherwise = findPlayerByID id ps
+
+-- Function to update player state
+-- replacePlayerState :: PlayerID -> PlayerState -> [PlayerState] -> [PlayerState]
+replacePlayerState _ _ [] = []
+replacePlayerState playerID newPlayerState (p:ps) =
+    case findPlayerByID playerID (p:ps) of
+        Just _ -> newPlayerState : ps
+        Nothing -> p : replacePlayerState playerID newPlayerState ps
+
+-- Function to find an ownable tile by location on the board
+-- findTileByLocation :: BoardLocation -> [OwnableTileState] -> Maybe OwnableTileState
+findTileByLocation _ [] = Nothing
+findTileByLocation location (tile:rest) = 
+    | loc `elem` tileLocation tile = Just tile
+    | otherwise = findTileByLocation location rest
+
+-- Function to update tile state
+-- replaceTileState :: BoardLocation -> OwnableTileState -> [OwnableTileState] -> [OwnableTileState]
+replaceTileState _ _ [] = []
+replaceTileState location newTileState (tile:rest) = 
+    case findTileByLocation location (tile:rest) of 
+        Just _ -> newTileState : rest
+        Nothing -> tile : replaceTileState location newTileState rest
+        
 --------------------------------
 -- Game Turn
 --------------------------------
