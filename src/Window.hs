@@ -6,7 +6,6 @@ Description :  This is the module which contains all the graphics and window
 
 module Window
     (
-        startGame,
         playGame
     ) where
 
@@ -16,7 +15,8 @@ import Graphics.Gloss.Interface.IO.Interact
 
 import Monopoly
 
-window = InWindow "Monopoly" (windowWidth, windowHeight) (0, 0)
+window :: Display
+window = InWindow windowTitle (windowWidth, windowHeight) (0, 0)
 
 windowTitle :: String
 windowTitle = "Monopoly"
