@@ -8,4 +8,4 @@ import Window
 
 main :: IO ()
 main = do 
-    startGame
+    playGame
