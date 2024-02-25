@@ -25,7 +25,8 @@ module Monopoly
         findPlayerByID,
         replacePlayerState,
         findTileByLocation,
-        replaceTileState
+        replaceTileState,
+        initialGameState
     ) where
 
 --------------------------------
@@ -121,5 +122,19 @@ replaceTileState location newTileState (tile:rest) =
         Nothing -> tile : replaceTileState location newTileState rest
 
 --------------------------------
--- Game Turn
+-- Definitions
 --------------------------------
+initialGameState = GameState {
+    playersState = PlayersState {
+        playerStates = [],
+        playerIDTurn = 0
+    },
+    boardState = BoardState {
+        tileUpperBound = 0,
+        tilesState = []
+    },
+    turnState = TurnState {
+        diceRolled = False,
+        diceResult = (0, 0)
+    }
+}
