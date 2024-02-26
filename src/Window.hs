@@ -42,7 +42,9 @@ tickGame :: Float -> GameState -> GameState
 tickGame f gs = gs
 
 renderGame :: Picture -> GameState -> Picture
-renderGame board gs = board
+renderGame board gs = pictures [
+    board,
+    translate (-400) (400) $ scale 0.125 0.125 $ text $ getDebugMessage gs ]
 
 onEventGame :: Event -> GameState -> GameState
 onEventGame e gs = initialGameState
