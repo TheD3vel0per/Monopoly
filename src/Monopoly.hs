@@ -26,6 +26,8 @@ module Monopoly
         replacePlayerState,
         findTileByLocation,
         replaceTileState,
+        getDebugMessage,
+        setDebugMessage,
         initialGameState
     ) where
 
@@ -83,6 +85,7 @@ type TileState = OwnableTileState
 
 -- | State of the turn in progress
 data TurnState = TurnState {
+    debugMessage    :: String,              -- ^ Extra debugging message to be printed to the board
     diceRolled      :: Bool,                -- ^ Whether or not the dice has been rolled
     diceResult      :: (Int, Int)           -- ^ Resulting roll of the dice
 }
@@ -121,6 +124,13 @@ replaceTileState location newTileState (tile:rest) =
         Just _ -> newTileState : rest
         Nothing -> tile : replaceTileState location newTileState rest
 
+getDebugMessage :: GameState -> String
+getDebugMessage gs = debugMessage (turnState gs)
+
+setDebugMessage :: GameState -> String -> GameState
+setDebugMessage gs msg =
+    gs { turnState = (turnState gs) { debugMessage = msg } }
+
 --------------------------------
 -- Definitions
 --------------------------------
@@ -134,6 +144,7 @@ initialGameState = GameState {
         tilesState = []
     },
     turnState = TurnState {
+        debugMessage = "kemcho",
         diceRolled = False,
         diceResult = (0, 0)
     }

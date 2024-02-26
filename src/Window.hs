@@ -22,7 +22,7 @@ windowTitle :: String
 windowTitle = "Monopoly"
 
 windowWidth :: Int
-windowWidth = 1117 
+windowWidth = 1117
 
 windowHeight :: Int
 windowHeight = 1117
@@ -42,7 +42,23 @@ tickGame :: Float -> GameState -> GameState
 tickGame f gs = gs
 
 renderGame :: Picture -> GameState -> Picture
-renderGame board gs = board
+renderGame board gs = pictures [
+
+    -- Board
+    board,
+
+    -- Debug Message
+    translate (-400) (400) $ scale 0.125 0.125 $ text $ getDebugMessage gs
+    ]
 
 onEventGame :: Event -> GameState -> GameState
-onEventGame e gs = initialGameState
+onEventGame e gs =
+    case e of
+        EventKey key _ _ point ->
+            case key of
+                MouseButton _ -> onClick point gs
+                otherwise -> gs
+        otherwise -> gs
+
+onClick :: (Float, Float) -> GameState -> GameState
+onClick (x, y) gs = setDebugMessage gs $ "(" ++ show x ++ "," ++ show y ++ ")"
