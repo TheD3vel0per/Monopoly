@@ -68,9 +68,18 @@ renderGame board die gs = pictures [
     translate (-400) (400) $ scale 0.125 0.125 $ text $ getDebugMessage gs,
 
     -- Dice
-    translate 225 350 $ renderDie die (1, 2)
+    translate 225 350 $ renderDie die $ getDieResult gs,
+
+    -- Roll Button
+    translate 285 250 $ renderRollButton $ not $ getDieRolled gs
     ]
 
+renderRollButton :: Bool -> Picture
+renderRollButton False = blank
+renderRollButton True = pictures [
+    color (greyN 0.5) $ rectangleSolid 220 50,
+    translate (-100) (-10) $ color white $ scale 0.25 0.25 $ text "Roll the Die!"
+    ]
 
 renderDie :: [Picture] -> (Int, Int) -> Picture
 renderDie die (a, b) = pictures [
@@ -100,4 +109,11 @@ onEventGame e gs =
         otherwise -> gs
 
 onClick :: (Float, Float) -> GameState -> GameState
-onClick (x, y) gs = setDebugMessage gs $ "(" ++ show x ++ "," ++ show y ++ ")"
+onClick (x, y) gs
+    -- Clicked on the Roll Dice Button
+    | (x >= 175.0) && (y >= 225.0) && (x <= 390.0) && (y <= 275.0) && not (getDieRolled gs) =
+        setDieResult (3, 4) $
+        setDebugMessage ("(" ++ show x ++ "," ++ show y ++ ")") gs
+
+    -- Useless click
+    | otherwise = setDebugMessage ("(" ++ show x ++ "," ++ show y ++ ")") gs

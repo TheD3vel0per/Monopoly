@@ -28,6 +28,10 @@ module Monopoly
         replaceTileState,
         getDebugMessage,
         setDebugMessage,
+        getDieResult,
+        setDieResult,
+        getDieRolled,
+        setDieRolled,
         initialGameState
     ) where
 
@@ -124,12 +128,36 @@ replaceTileState location newTileState (tile:rest) =
         Just _ -> newTileState : rest
         Nothing -> tile : replaceTileState location newTileState rest
 
+-- | Get the debug message from the game state
 getDebugMessage :: GameState -> String
 getDebugMessage gs = debugMessage (turnState gs)
 
-setDebugMessage :: GameState -> String -> GameState
-setDebugMessage gs msg =
+-- | Set the debug message and produce a new game state
+setDebugMessage :: String -> GameState -> GameState
+setDebugMessage msg gs =
     gs { turnState = (turnState gs) { debugMessage = msg } }
+
+-- | Get the die roll
+getDieResult :: GameState -> (Int, Int)
+getDieResult gs = diceResult $ turnState gs
+
+-- | Set the die roll
+setDieResult :: (Int, Int) -> GameState -> GameState
+setDieResult pair gs = 
+    gs { turnState = (turnState gs) { diceResult = pair } }
+
+-- | Get the die roll
+getDieRolled :: GameState -> Bool
+getDieRolled gs = diceRolled $ turnState gs
+
+-- | Set the die roll
+setDieRolled :: Bool -> GameState -> GameState
+setDieRolled pair gs = 
+    gs { turnState = (turnState gs) { diceRolled = pair } }
+
+-- | Rl
+getRandomDieRoll 
+
 
 --------------------------------
 -- Definitions
@@ -146,6 +174,6 @@ initialGameState = GameState {
     turnState = TurnState {
         debugMessage = "kemcho",
         diceRolled = False,
-        diceResult = (0, 0)
+        diceResult = (2, 3)
     }
 }

@@ -24,6 +24,7 @@ dependencies:
 - gloss
 - JuicyPixels
 - gloss-juicy
+- random
 
 ghc-options:
 - -Wall
