@@ -39,3 +39,6 @@
 ## MVP
 @kaylaox this is what we're working on right now
 Only roll the dice and land on properties, nothing more than that. When you land on properties you can only buy, pass or pay rent. Still collect $200 when going around.
+
+## Citations
+- https://pixabay.com/vectors/dice-games-game-six-sided-face-26772/

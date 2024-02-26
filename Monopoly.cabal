@@ -37,6 +37,7 @@ library
     , base >=4.7 && <5
     , gloss
     , gloss-juicy
+    , random
   default-language: Haskell2010
 
 executable Monopoly-exe
@@ -52,6 +53,7 @@ executable Monopoly-exe
     , base >=4.7 && <5
     , gloss
     , gloss-juicy
+    , random
   default-language: Haskell2010
 
 test-suite Monopoly-test
@@ -68,4 +70,5 @@ test-suite Monopoly-test
     , base >=4.7 && <5
     , gloss
     , gloss-juicy
+    , random
   default-language: Haskell2010
