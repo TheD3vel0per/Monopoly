@@ -32,8 +32,12 @@ module Monopoly
         setDieResult,
         getDieRolled,
         setDieRolled,
+        rollDie,
+        incrementDieRollNumber,
         initialGameState
     ) where
+
+import System.Random
 
 --------------------------------
 -- Data Definitions
@@ -89,6 +93,7 @@ type TileState = OwnableTileState
 
 -- | State of the turn in progress
 data TurnState = TurnState {
+    dieRollNumber   :: Int,                 -- ^ Which turn this current turn is
     debugMessage    :: String,              -- ^ Extra debugging message to be printed to the board
     diceRolled      :: Bool,                -- ^ Whether or not the dice has been rolled
     diceResult      :: (Int, Int)           -- ^ Resulting roll of the dice
@@ -155,13 +160,22 @@ setDieRolled :: Bool -> GameState -> GameState
 setDieRolled pair gs = 
     gs { turnState = (turnState gs) { diceRolled = pair } }
 
--- | Rl
-getRandomDieRoll 
+-- | Roll the die
+rollDie :: GameState -> GameState
+rollDie gs = 
+    incrementDieRollNumber $
+    setDieResult (dieRolls !! (dieRollNumber (turnState gs))) gs
+
+-- | Increment the die roll number
+incrementDieRollNumber :: GameState -> GameState
+incrementDieRollNumber gs =
+    gs { turnState = (turnState gs) { dieRollNumber = 1 + dieRollNumber (turnState gs)}}
 
 
 --------------------------------
 -- Definitions
 --------------------------------
+initialGameState :: GameState
 initialGameState = GameState {
     playersState = PlayersState {
         playerStates = [],
@@ -172,8 +186,17 @@ initialGameState = GameState {
         tilesState = []
     },
     turnState = TurnState {
+        dieRollNumber = 0,
         debugMessage = "kemcho",
         diceRolled = False,
         diceResult = (2, 3)
     }
 }
+
+dieRollMax :: Int
+dieRollMax = 250
+
+dieRolls :: [(Int, Int)]
+dieRolls = zip
+    (map ((+) 1) $ map (\x -> mod x 5) $ map abs $ take dieRollMax $ randoms (mkStdGen 69))
+    (map ((+) 1) $ map (\x -> mod x 5) $ map abs $ take dieRollMax $ randoms (mkStdGen 420))

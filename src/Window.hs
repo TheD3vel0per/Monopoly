@@ -53,7 +53,7 @@ tickGame _ gs = gs
 
 loadImages :: [String] -> IO [Picture]
 loadImages imagePaths = do
-    maybeImages <- mapM loadJuicy imagePaths -- Specify the path to your images directory
+    maybeImages <- mapM loadJuicy imagePaths
     case sequence maybeImages of
         Just images -> return images
         Nothing   -> return []
@@ -112,7 +112,8 @@ onClick :: (Float, Float) -> GameState -> GameState
 onClick (x, y) gs
     -- Clicked on the Roll Dice Button
     | (x >= 175.0) && (y >= 225.0) && (x <= 390.0) && (y <= 275.0) && not (getDieRolled gs) =
-        setDieResult (3, 4) $
+        rollDie $
+        setDieRolled True $
         setDebugMessage ("(" ++ show x ++ "," ++ show y ++ ")") gs
 
     -- Useless click
