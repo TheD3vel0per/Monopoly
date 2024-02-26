@@ -38,7 +38,9 @@ module Monopoly
     ) where
 
 import System.Random
-
+import Data.Binary
+import GHC.Generics (Generic)
+import System.FilePath (FilePath)
 --------------------------------
 -- Data Definitions
 --------------------------------
@@ -52,12 +54,16 @@ type NullablePlayerID = Maybe PlayerID
 -- | Type for identifying a position on the Board
 type BoardLocation = Int
 
+-- | File Name for the entire game
+data FileName = FileName String
+    deriving (Show)
+
 -- | Global state for the entire game
 data GameState = GameState {
     playersState    :: PlayersState,        -- ^ Player state of all players in the game
     boardState      :: BoardState,          -- ^ Board state of the game
     turnState       :: TurnState            -- ^ State of the current turn
-}
+} deriving (Generic)
 
 -- | Players state for the entire game
 data PlayersState = PlayersState {
@@ -170,6 +176,17 @@ rollDie gs =
 incrementDieRollNumber :: GameState -> GameState
 incrementDieRollNumber gs =
     gs { turnState = (turnState gs) { dieRollNumber = 1 + dieRollNumber (turnState gs)}}
+
+-- | Define how to serialize and deserialize the game state
+instance Binary GameState
+
+-- | Save GameState to a file 
+saveGameState :: FilePath -> GameState -> IO()
+saveGameState filePath gs = encodeFile filePath gs
+
+-- | Load GameState from a file
+loadGameState :: FilePath -> IO GameState
+loadGameState filePath = decodeFile filePath
 
 
 --------------------------------
