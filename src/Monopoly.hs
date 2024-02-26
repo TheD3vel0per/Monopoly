@@ -27,6 +27,7 @@ module Monopoly
         findTileByLocation,
         replaceTileState,
         getDebugMessage,
+        setDebugMessage,
         initialGameState
     ) where
 
@@ -125,6 +126,10 @@ replaceTileState location newTileState (tile:rest) =
 
 getDebugMessage :: GameState -> String
 getDebugMessage gs = debugMessage (turnState gs)
+
+setDebugMessage :: GameState -> String -> GameState
+setDebugMessage gs msg =
+    gs { turnState = (turnState gs) { debugMessage = msg } }
 
 --------------------------------
 -- Definitions
