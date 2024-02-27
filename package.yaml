@@ -25,6 +25,8 @@ dependencies:
 - JuicyPixels
 - gloss-juicy
 - random
+- binary 
+- filepath
 
 ghc-options:
 - -Wall

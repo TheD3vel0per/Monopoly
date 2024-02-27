@@ -37,9 +37,10 @@ module Monopoly
         initialGameState
     ) where
 
+{-# LANGUAGE DeriveGeneric #-}
 import System.Random
 import Data.Binary
-import GHC.Generics (Generic)
+import GHC.Generics -- (Generic)
 import System.FilePath (FilePath)
 --------------------------------
 -- Data Definitions

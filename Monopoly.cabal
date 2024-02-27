@@ -35,6 +35,8 @@ library
   build-depends:
       JuicyPixels
     , base >=4.7 && <5
+    , binary
+    , filepath
     , gloss
     , gloss-juicy
     , random
@@ -51,6 +53,8 @@ executable Monopoly-exe
       JuicyPixels
     , Monopoly
     , base >=4.7 && <5
+    , binary
+    , filepath
     , gloss
     , gloss-juicy
     , random
@@ -60,6 +64,7 @@ test-suite Monopoly-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      TestSpec
       Paths_Monopoly
   hs-source-dirs:
       test
@@ -68,6 +73,8 @@ test-suite Monopoly-test
       JuicyPixels
     , Monopoly
     , base >=4.7 && <5
+    , binary
+    , filepath
     , gloss
     , gloss-juicy
     , random
