@@ -27,17 +27,17 @@ windowTitle :: String
 windowTitle = "Monopoly"
 
 windowWidth :: Int
-windowWidth = 1117
+windowWidth = 1024
 
 windowHeight :: Int
-windowHeight = 1117
+windowHeight = 1024
 
 gameRefreshRate :: Int
 gameRefreshRate = 60
 
 playGame :: IO ()
 playGame = do
-    maybeBoard <- loadJuicyPNG "resources/board.png"
+    maybeBoard <- loadJuicyPNG "resources/board-mini.png"
     die <- loadImages ["resources/dice1.png", "resources/dice2.png", "resources/dice3.png", "resources/dice4.png", "resources/dice5.png", "resources/dice6.png"]
 
     case maybeBoard of
@@ -65,34 +65,34 @@ renderGame board die gs = pictures [
     board,
 
     -- Debug Message
-    translate (-400) (400) $ scale 0.125 0.125 $ text $ getDebugMessage gs,
+    translate (-265) (250) $ scale 0.125 0.125 $ text $ getDebugMessage gs,
 
     -- Dice
-    translate 225 350 $ renderDie die $ getDieResult gs,
+    translate 145 220 $ renderDie die $ getDieResult gs,
 
     -- Roll Button
-    translate 285 250 $ renderRollButton $ not $ getDieRolled gs
+    translate 185 165 $ renderRollButton $ not $ getDieRolled gs
     ]
 
 renderRollButton :: Bool -> Picture
 renderRollButton False = blank
 renderRollButton True = pictures [
-    color (greyN 0.5) $ rectangleSolid 220 50,
-    translate (-100) (-10) $ color white $ scale 0.25 0.25 $ text "Roll the Die!"
+    color (greyN 0.5) $ rectangleSolid 150 30,
+    translate (-60) (-5) $ color white $ scale 0.15 0.15 $ text "Roll the Die!"
     ]
 
 renderDie :: [Picture] -> (Int, Int) -> Picture
 renderDie die (a, b) = pictures [
     renderDice die a, 
-    translate 120 0 $ renderDice die b ]
+    translate 80 0 $ renderDice die b ]
 
 renderDice :: [Picture] -> Int -> Picture
-renderDice die 1 = scale 0.5 0.5 $ die !! (1 - 1)
-renderDice die 2 = scale 0.5 0.5 $ die !! (2 - 1)
-renderDice die 3 = scale 0.5 0.5 $ die !! (3 - 1)
-renderDice die 4 = scale 0.5 0.5 $ die !! (4 - 1)
-renderDice die 5 = scale 0.5 0.5 $ die !! (5 - 1)
-renderDice die 6 = scale 0.5 0.5 $ die !! (6 - 1)
+renderDice die 1 = scale 0.3 0.3 $ die !! (1 - 1)
+renderDice die 2 = scale 0.3 0.3 $ die !! (2 - 1)
+renderDice die 3 = scale 0.3 0.3 $ die !! (3 - 1)
+renderDice die 4 = scale 0.3 0.3 $ die !! (4 - 1)
+renderDice die 5 = scale 0.3 0.3 $ die !! (5 - 1)
+renderDice die 6 = scale 0.3 0.3 $ die !! (6 - 1)
 renderDice _ _ = blank
 
 --------------------------------
@@ -111,7 +111,7 @@ onEventGame e gs =
 onClick :: (Float, Float) -> GameState -> GameState
 onClick (x, y) gs
     -- Clicked on the Roll Dice Button
-    | (x >= 175.0) && (y >= 225.0) && (x <= 390.0) && (y <= 275.0) && not (getDieRolled gs) =
+    | (x >= 110.0) && (y >= 150.0) && (x <= 260.0) && (y <= 180.0) && not (getDieRolled gs) =
         rollDie $
         setDieRolled True $
         setDebugMessage ("(" ++ show x ++ "," ++ show y ++ ")") gs
