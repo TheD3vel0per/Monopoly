@@ -1,3 +1,6 @@
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
 {- |
 Module      :  Monopoly
 Description :  This is an implementation of the Monopoly game made by Devam
@@ -37,7 +40,6 @@ module Monopoly
         initialGameState
     ) where
 
-{-# LANGUAGE DeriveGeneric #-}
 import System.Random
 import Data.Binary
 import GHC.Generics -- (Generic)
@@ -70,7 +72,7 @@ data GameState = GameState {
 data PlayersState = PlayersState {
     playerStates    :: [PlayerState],       -- ^ List of all the players in the game
     playerIDTurn    :: PlayerID             -- ^ ID of the player whose turn it is
-}
+} deriving (Generic)
 
 -- | Individual player state
 data PlayerState = PlayerState {
@@ -79,13 +81,13 @@ data PlayerState = PlayerState {
     currentLocation :: BoardLocation,       -- ^ Which tile the player is currently situated on
     inJail          :: Bool,                -- ^ whether the player is in jail or not
     propertiesOwned :: [BoardLocation]      -- ^ list of properties owned by the player
-}
+} deriving (Generic)
 
 -- | Board state for the entire game
 data BoardState = BoardState {
     tileUpperBound  :: BoardLocation,       -- ^ Largest identifier (in use) of tiles
     tilesState      :: [TileState]          -- ^ List of all the tiles on the board
-}
+} deriving (Generic)
 
 -- | Tile state for an ownable tile on the board
 data OwnableTileState = OwnableTileState {
@@ -93,7 +95,7 @@ data OwnableTileState = OwnableTileState {
     tileOwner       :: PlayerID,            -- ^ Owner of the tile
     value           :: Int,                 -- ^ Value of the tile
     rent            :: Int                  -- ^ Rent to be paid when landing on this tile/property
-}   
+} deriving (Generic)
 
 -- | Tile state for an individual tile on the board
 type TileState = OwnableTileState
@@ -104,7 +106,7 @@ data TurnState = TurnState {
     debugMessage    :: String,              -- ^ Extra debugging message to be printed to the board
     diceRolled      :: Bool,                -- ^ Whether or not the dice has been rolled
     diceResult      :: (Int, Int)           -- ^ Resulting roll of the dice
-}
+} deriving (Generic)
 
 --------------------------------
 -- State Mutation
@@ -180,6 +182,26 @@ incrementDieRollNumber gs =
 
 -- | Define how to serialize and deserialize the game state
 instance Binary GameState
+
+instance Binary PlayersState where
+    put (PlayersState states turn) = put states >> put turn
+    get = PlayersState <$> get <*> get
+
+instance Binary PlayerState where
+    put (PlayerState ident fund loc jail owned) = put ident >> put fund >> put loc >> put jail >> put owned
+    get = PlayerState <$> get <*> get <*> get <*> get <*> get
+
+instance Binary BoardState where
+    put (BoardState bound tiles) = put bound >> put tiles
+    get = BoardState <$> get <*> get
+
+instance Binary TileState where
+    put (OwnableTileState loc owner val rent) = put loc >> put owner >> put val >> put rent
+    get = OwnableTileState <$> get <*> get <*> get <*> get
+
+instance Binary TurnState where
+    put (TurnState roll msg rolled result) = put roll >> put msg >> put rolled >> put result
+    get = TurnState <$> get <*> get <*> get <*> get
 
 -- | Save GameState to a file 
 saveGameState :: FilePath -> GameState -> IO()
