@@ -88,6 +88,28 @@ data OwnableTileState = OwnableTileState {
     rent            :: Int                  -- ^ Rent to be paid when landing on this tile/property
 }   
 
+-- | Data type for the tiles
+data Tile = Property { name :: String, cost :: Int, rent :: Int }
+          | Free
+          | Fine { fine :: Int}
+          | Go 
+
+-- | Defining the initial board state with tiles
+initialBoard :: [Tile]
+initialBoard = 
+    [Go, 
+     Property "Agronomy Rd" 1 1,
+     Property "Wesbrook Mall" 3 2,
+     Free,
+     Property "Health Sciences Road" 5 3,
+     Property "Engineering Road" 7 4,
+     Fine 5,
+     Property "Iona Drive" 9 5,
+     Property "Wesbrook Mall" 11 6, 
+     Free,
+     Property "University Boulevard" 13 7,
+     Property "Main Mall" 15 8]
+
 -- | Tile state for an individual tile on the board
 type TileState = OwnableTileState
 
@@ -171,6 +193,23 @@ incrementDieRollNumber :: GameState -> GameState
 incrementDieRollNumber gs =
     gs { turnState = (turnState gs) { dieRollNumber = 1 + dieRollNumber (turnState gs)}}
 
+-- | convert Tile to OwnableTileState
+tileToOwnableTileState :: BoardLocation -> Tile -> OwnableTileState
+tileToOwnableTileState location tile = 
+    case tile of 
+        Property name cost rent -> OwnableTileState [location] 0 cost rent
+                                -> OwnableTileState [location] 0 0 0 
+
+-- | create the initial board state
+initialBoardState :: BoardState
+initialBoardState = BoardState(length initialBoard - 1) (zipWith tileToOwnableTileState [0..] initialBoard)
+
+-- | function to initialize the game state 
+initialGameState :: GameState
+initialGameState = GameState initialPlayersState initialBoardState initialTurnState
+    where 
+        initialPlayersState = PlayersState [] 0 -- assuming there are no players initially
+        initialTurnState = TurnState 0 "" False (0,0)
 
 --------------------------------
 -- Definitions
