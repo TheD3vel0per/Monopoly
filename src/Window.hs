@@ -79,9 +79,12 @@ renderGame board die players gs = pictures [
 
     -- Funds
     translate (-265) 225 $ renderFunds players $ getPlayerStates gs,
-    
+
     -- Ownership 
-    renderOwnership $ getTileStates gs ]
+    renderOwnership $ getTileStates gs,
+
+    -- Turn Indicator
+    translate (-260) (-130) $ renderTurn gs ]
 
 renderRollButton :: Bool -> Picture
 renderRollButton False = blank
@@ -149,7 +152,7 @@ renderOwnership :: [TileState] -> Picture
 renderOwnership [] = blank
 renderOwnership (ts:tss) = pictures [
     case ts of
-        OwnableTileState tid owner _ _ -> 
+        OwnableTileState tid owner _ _ ->
             case owner of
                 Just pid -> let (x, y) = mapBoardLocation2Position4OwnerPos tid in
                     translate x y $ scale 0.1 0.1 $ text ("Owned by Player " ++ show pid)
@@ -167,6 +170,10 @@ mapBoardLocation2Position4OwnerPos 8 = (25, 360)
 mapBoardLocation2Position4OwnerPos 10 = (360, 240)
 mapBoardLocation2Position4OwnerPos 11 = (360, -30)
 mapBoardLocation2Position4OwnerPos _ = (0, 0)
+
+renderTurn :: GameState -> Picture
+renderTurn gs = let pid = getCurrentPlayerID gs in
+    scale 0.25 0.25 $ text ("It's Player " ++ show pid ++ "'s turn.")
 
 --------------------------------
 -- Events

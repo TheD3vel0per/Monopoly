@@ -37,7 +37,8 @@ module Monopoly
         getPlayerID,
         getPlayerFunds,
         getTileLocation,
-        getTileStates
+        getTileStates,
+        getCurrentPlayerID
     ) where
 
 import System.Random
@@ -177,6 +178,10 @@ getTileLocation = tileLocation
 -- | Get the tile states
 getTileStates :: GameState -> [TileState]
 getTileStates gs = tilesState (boardState gs)
+
+-- | Get the ID of the current players (whose turn it is)
+getCurrentPlayerID :: GameState -> PlayerID
+getCurrentPlayerID gs = playerIDTurn (playersState gs)
 
 
 --------------------------------
