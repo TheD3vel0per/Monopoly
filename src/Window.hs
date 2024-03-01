@@ -78,7 +78,10 @@ renderGame board die players gs = pictures [
     renderPlayers players $ getPlayerStates gs,
 
     -- Funds
-    translate (-265) 225 $ renderFunds players $ getPlayerStates gs ]
+    translate (-265) 225 $ renderFunds players $ getPlayerStates gs,
+    
+    -- Ownership 
+    renderOwnership $ getTileStates gs ]
 
 renderRollButton :: Bool -> Picture
 renderRollButton False = blank
@@ -141,6 +144,29 @@ renderFunds (pic:pics) (ps:pss) = pictures [
     let (x, y) = mapBoardLocation2Position4PlayerPos (currentLocation ps) in
         scale 0.125 0.125 $ text ("Player " ++ show (getPlayerID ps) ++ " has $" ++ show (getPlayerFunds ps)),
     translate 0 (-20) $ renderFunds pics pss ]
+
+renderOwnership :: [TileState] -> Picture
+renderOwnership [] = blank
+renderOwnership (ts:tss) = pictures [
+    case ts of
+        OwnableTileState tid owner _ _ -> 
+            case owner of
+                Just pid -> let (x, y) = mapBoardLocation2Position4OwnerPos tid in
+                    translate x y $ scale 0.1 0.1 $ text ("Owned by Player " ++ show pid)
+                Nothing -> Blank
+        OtherTileState _ _ -> blank,
+    renderOwnership tss ]
+
+mapBoardLocation2Position4OwnerPos :: BoardLocation -> (Float, Float)
+mapBoardLocation2Position4OwnerPos 1 = (-4, -380)
+mapBoardLocation2Position4OwnerPos 2 = (-265, -380)
+mapBoardLocation2Position4OwnerPos 4 = (-500, 0)
+mapBoardLocation2Position4OwnerPos 5 = (-500, 260)
+mapBoardLocation2Position4OwnerPos 7 = (-260, 360)
+mapBoardLocation2Position4OwnerPos 8 = (25, 360)
+mapBoardLocation2Position4OwnerPos 10 = (360, 240)
+mapBoardLocation2Position4OwnerPos 11 = (360, -30)
+mapBoardLocation2Position4OwnerPos _ = (0, 0)
 
 --------------------------------
 -- Events

@@ -19,14 +19,11 @@ module Monopoly
         PlayersState,
         PlayerState,
         BoardState,
-        OwnableTileState,
-        TileState,
+        TileState ( OwnableTileState, OtherTileState ),
         TurnState,
         currentLocation,
         findPlayerByID,
         replacePlayerState,
-        findTileByLocation,
-        replaceTileState,
         getDebugMessage,
         setDebugMessage,
         getDieResult,
@@ -38,7 +35,9 @@ module Monopoly
         initialGameState,
         getPlayerStates,
         getPlayerID,
-        getPlayerFunds
+        getPlayerFunds,
+        getTileLocation,
+        getTileStates
     ) where
 
 import System.Random
@@ -79,20 +78,20 @@ data PlayerState = PlayerState {
 
 -- | Board state for the entire game
 data BoardState = BoardState {
-    tileUpperBound  :: BoardLocation,       -- ^ Largest identifier (in use) of tiles
+    tileModulus  :: BoardLocation,       -- ^ Largest identifier (in use) of tiles
     tilesState      :: [TileState]          -- ^ List of all the tiles on the board
 }
 
--- | Tile state for an ownable tile on the board
-data OwnableTileState = OwnableTileState {
-    tileLocation    :: [BoardLocation],     -- ^ Location of the tile on the board
-    tileOwner       :: PlayerID,            -- ^ Owner of the tile
-    value           :: Int,                 -- ^ Value of the tile
-    rent            :: Int                  -- ^ Rent to be paid when landing on this tile/property
-}
-
 -- | Tile state for an individual tile on the board
-type TileState = OwnableTileState
+data TileState = OwnableTileState {
+        tileLocation    :: BoardLocation,       -- ^ Location of the tile on the board
+        tileOwner       :: Maybe PlayerID,      -- ^ Owner of the tile
+        value           :: Int,                 -- ^ Value of the tile
+        rent            :: Int                  -- ^ Rent to be paid when landing on this tile/property
+    } | OtherTileState {
+        tileLocation    :: BoardLocation,       -- ^ Location of the tile on the board
+        fundDelta       :: Int                  -- ^ How much this tile changes the funds of the player who lands on it
+    }
 
 -- | State of the turn in progress
 data TurnState = TurnState {
@@ -120,21 +119,6 @@ replacePlayerState playerID newPlayerState (p:ps) =
     case findPlayerByID playerID (p:ps) of
         Just _ -> newPlayerState : ps
         Nothing -> p : replacePlayerState playerID newPlayerState ps
-
--- | Function to find an ownable tile by location on the board
-findTileByLocation :: BoardLocation -> [OwnableTileState] -> Maybe OwnableTileState
-findTileByLocation _ [] = Nothing
-findTileByLocation location (tile:rest)
-    | location `elem` tileLocation tile = Just tile
-    | otherwise = findTileByLocation location rest
-
--- | Function to update tile state
-replaceTileState :: BoardLocation -> OwnableTileState -> [OwnableTileState] -> [OwnableTileState]
-replaceTileState _ _ [] = []
-replaceTileState location newTileState (tile:rest) =
-    case findTileByLocation location (tile:rest) of
-        Just _ -> newTileState : rest
-        Nothing -> tile : replaceTileState location newTileState rest
 
 -- | Get the debug message from the game state
 getDebugMessage :: GameState -> String
@@ -183,8 +167,17 @@ getPlayerID :: PlayerState -> PlayerID
 getPlayerID = identifier
 
 -- | Get the player ID
-getPlayerFunds :: PlayerState -> Int
+getPlayerFunds :: PlayerState -> PlayerID
 getPlayerFunds = funds
+
+-- | Get tile location
+getTileLocation :: TileState -> BoardLocation
+getTileLocation = tileLocation
+
+-- | Get the tile states
+getTileStates :: GameState -> [TileState]
+getTileStates gs = tilesState (boardState gs)
+
 
 --------------------------------
 -- Definitions
@@ -194,25 +187,25 @@ initialGameState = GameState {
     playersState = PlayersState {
         playerStates = [
             PlayerState {
-                identifier = 0, 
+                identifier = 0,
                 funds = 10,
                 currentLocation = 0,
                 propertiesOwned = []
             },
             PlayerState {
-                identifier = 1, 
+                identifier = 1,
                 funds = 10,
                 currentLocation = 0,
                 propertiesOwned = []
             },
             PlayerState {
-                identifier = 2, 
+                identifier = 2,
                 funds = 10,
                 currentLocation = 0,
                 propertiesOwned = []
             },
             PlayerState {
-                identifier = 3, 
+                identifier = 3,
                 funds = 10,
                 currentLocation = 0,
                 propertiesOwned = []
@@ -221,8 +214,73 @@ initialGameState = GameState {
         playerIDTurn = 0
     },
     boardState = BoardState {
-        tileUpperBound = 0,
-        tilesState = []
+        tileModulus = 12,
+        tilesState = [
+            OtherTileState {            -- Go
+                tileLocation = 0,
+                fundDelta = 20
+            },
+            OwnableTileState {          -- Agronomy Road
+                tileLocation = 1,
+                tileOwner = Nothing,
+                value = 1,
+                rent = 1
+            },
+            OwnableTileState {          -- Wesbrook Mall
+                tileLocation = 2,
+                tileOwner = Nothing,
+                value = 3,
+                rent = 2
+            },
+            OtherTileState {            -- Free
+                tileLocation = 3,
+                fundDelta = 0
+            },
+            OwnableTileState {          -- Health Sciences Road
+                tileLocation = 4,
+                tileOwner = Nothing,
+                value = 5,
+                rent = 3
+            },
+            OwnableTileState {          -- Engineering Road
+                tileLocation = 5,
+                tileOwner = Nothing,
+                value = 7,
+                rent = 4
+            },
+            OtherTileState {            -- Fine
+                tileLocation = 6,
+                fundDelta = -5
+            },
+            OwnableTileState {          -- Iona Road
+                tileLocation = 7,
+                tileOwner = Nothing,
+                value = 9,
+                rent = 5
+            },
+            OwnableTileState {          -- Wesbrook Mall
+                tileLocation = 8,
+                tileOwner = Nothing,
+                value = 11,
+                rent = 6
+            },
+            OtherTileState {            -- Free
+                tileLocation = 9,
+                fundDelta = 0
+            },
+            OwnableTileState {          -- University Boulevard
+                tileLocation = 10,
+                tileOwner = Nothing,
+                value = 13,
+                rent = 7
+            },
+            OwnableTileState {          -- Main Mall
+                tileLocation = 11,
+                tileOwner = Nothing,
+                value = 15,
+                rent = 8
+            }
+        ]
     },
     turnState = TurnState {
         dieRollNumber = 0,
