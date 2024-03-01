@@ -19,13 +19,11 @@ module Monopoly
         PlayersState,
         PlayerState,
         BoardState,
-        OwnableTileState,
-        TileState,
+        TileState ( OwnableTileState, OtherTileState ),
         TurnState,
+        currentLocation,
         findPlayerByID,
         replacePlayerState,
-        findTileByLocation,
-        replaceTileState,
         getDebugMessage,
         setDebugMessage,
         getDieResult,
@@ -34,7 +32,13 @@ module Monopoly
         setDieRolled,
         rollDie,
         incrementDieRollNumber,
-        initialGameState
+        initialGameState,
+        getPlayerStates,
+        getPlayerID,
+        getPlayerFunds,
+        getTileLocation,
+        getTileStates,
+        getCurrentPlayerID
     ) where
 
 import System.Random
@@ -70,26 +74,25 @@ data PlayerState = PlayerState {
     identifier      :: PlayerID,            -- ^ ID of the player
     funds           :: Int,                 -- ^ Amount of Money the Player Has
     currentLocation :: BoardLocation,       -- ^ Which tile the player is currently situated on
-    inJail          :: Bool,                -- ^ whether the player is in jail or not
     propertiesOwned :: [BoardLocation]      -- ^ list of properties owned by the player
 }
 
 -- | Board state for the entire game
 data BoardState = BoardState {
-    tileUpperBound  :: BoardLocation,       -- ^ Largest identifier (in use) of tiles
+    tileModulus  :: BoardLocation,       -- ^ Largest identifier (in use) of tiles
     tilesState      :: [TileState]          -- ^ List of all the tiles on the board
 }
 
--- | Tile state for an ownable tile on the board
-data OwnableTileState = OwnableTileState {
-    tileLocation    :: [BoardLocation],     -- ^ Location of the tile on the board
-    tileOwner       :: PlayerID,            -- ^ Owner of the tile
-    value           :: Int,                 -- ^ Value of the tile
-    rent            :: Int                  -- ^ Rent to be paid when landing on this tile/property
-}   
-
 -- | Tile state for an individual tile on the board
-type TileState = OwnableTileState
+data TileState = OwnableTileState {
+        tileLocation    :: BoardLocation,       -- ^ Location of the tile on the board
+        tileOwner       :: Maybe PlayerID,      -- ^ Owner of the tile
+        value           :: Int,                 -- ^ Value of the tile
+        rent            :: Int                  -- ^ Rent to be paid when landing on this tile/property
+    } | OtherTileState {
+        tileLocation    :: BoardLocation,       -- ^ Location of the tile on the board
+        fundDelta       :: Int                  -- ^ How much this tile changes the funds of the player who lands on it
+    }
 
 -- | State of the turn in progress
 data TurnState = TurnState {
@@ -118,21 +121,6 @@ replacePlayerState playerID newPlayerState (p:ps) =
         Just _ -> newPlayerState : ps
         Nothing -> p : replacePlayerState playerID newPlayerState ps
 
--- | Function to find an ownable tile by location on the board
-findTileByLocation :: BoardLocation -> [OwnableTileState] -> Maybe OwnableTileState
-findTileByLocation _ [] = Nothing
-findTileByLocation location (tile:rest)
-    | location `elem` tileLocation tile = Just tile
-    | otherwise = findTileByLocation location rest
-
--- | Function to update tile state
-replaceTileState :: BoardLocation -> OwnableTileState -> [OwnableTileState] -> [OwnableTileState]
-replaceTileState _ _ [] = []
-replaceTileState location newTileState (tile:rest) = 
-    case findTileByLocation location (tile:rest) of 
-        Just _ -> newTileState : rest
-        Nothing -> tile : replaceTileState location newTileState rest
-
 -- | Get the debug message from the game state
 getDebugMessage :: GameState -> String
 getDebugMessage gs = debugMessage (turnState gs)
@@ -148,7 +136,7 @@ getDieResult gs = diceResult $ turnState gs
 
 -- | Set the die roll
 setDieResult :: (Int, Int) -> GameState -> GameState
-setDieResult pair gs = 
+setDieResult pair gs =
     gs { turnState = (turnState gs) { diceResult = pair } }
 
 -- | Get the die roll
@@ -157,19 +145,43 @@ getDieRolled gs = diceRolled $ turnState gs
 
 -- | Set the die roll
 setDieRolled :: Bool -> GameState -> GameState
-setDieRolled pair gs = 
+setDieRolled pair gs =
     gs { turnState = (turnState gs) { diceRolled = pair } }
 
 -- | Roll the die
 rollDie :: GameState -> GameState
-rollDie gs = 
+rollDie gs =
     incrementDieRollNumber $
-    setDieResult (dieRolls !! (dieRollNumber (turnState gs))) gs
+    setDieResult (dieRolls !! dieRollNumber (turnState gs)) gs
 
 -- | Increment the die roll number
 incrementDieRollNumber :: GameState -> GameState
 incrementDieRollNumber gs =
     gs { turnState = (turnState gs) { dieRollNumber = 1 + dieRollNumber (turnState gs)}}
+
+-- | Get the player states
+getPlayerStates :: GameState -> [PlayerState]
+getPlayerStates gs = playerStates $ playersState gs
+
+-- | Get the player ID
+getPlayerID :: PlayerState -> PlayerID
+getPlayerID = identifier
+
+-- | Get the player ID
+getPlayerFunds :: PlayerState -> PlayerID
+getPlayerFunds = funds
+
+-- | Get tile location
+getTileLocation :: TileState -> BoardLocation
+getTileLocation = tileLocation
+
+-- | Get the tile states
+getTileStates :: GameState -> [TileState]
+getTileStates gs = tilesState (boardState gs)
+
+-- | Get the ID of the current players (whose turn it is)
+getCurrentPlayerID :: GameState -> PlayerID
+getCurrentPlayerID gs = playerIDTurn (playersState gs)
 
 
 --------------------------------
@@ -178,12 +190,102 @@ incrementDieRollNumber gs =
 initialGameState :: GameState
 initialGameState = GameState {
     playersState = PlayersState {
-        playerStates = [],
+        playerStates = [
+            PlayerState {
+                identifier = 0,
+                funds = 10,
+                currentLocation = 0,
+                propertiesOwned = []
+            },
+            PlayerState {
+                identifier = 1,
+                funds = 10,
+                currentLocation = 0,
+                propertiesOwned = []
+            },
+            PlayerState {
+                identifier = 2,
+                funds = 10,
+                currentLocation = 0,
+                propertiesOwned = []
+            },
+            PlayerState {
+                identifier = 3,
+                funds = 10,
+                currentLocation = 0,
+                propertiesOwned = []
+            }
+        ],
         playerIDTurn = 0
     },
     boardState = BoardState {
-        tileUpperBound = 0,
-        tilesState = []
+        tileModulus = 12,
+        tilesState = [
+            OtherTileState {            -- Go
+                tileLocation = 0,
+                fundDelta = 20
+            },
+            OwnableTileState {          -- Agronomy Road
+                tileLocation = 1,
+                tileOwner = Nothing,
+                value = 1,
+                rent = 1
+            },
+            OwnableTileState {          -- Wesbrook Mall
+                tileLocation = 2,
+                tileOwner = Nothing,
+                value = 3,
+                rent = 2
+            },
+            OtherTileState {            -- Free
+                tileLocation = 3,
+                fundDelta = 0
+            },
+            OwnableTileState {          -- Health Sciences Road
+                tileLocation = 4,
+                tileOwner = Nothing,
+                value = 5,
+                rent = 3
+            },
+            OwnableTileState {          -- Engineering Road
+                tileLocation = 5,
+                tileOwner = Nothing,
+                value = 7,
+                rent = 4
+            },
+            OtherTileState {            -- Fine
+                tileLocation = 6,
+                fundDelta = -5
+            },
+            OwnableTileState {          -- Iona Road
+                tileLocation = 7,
+                tileOwner = Nothing,
+                value = 9,
+                rent = 5
+            },
+            OwnableTileState {          -- Wesbrook Mall
+                tileLocation = 8,
+                tileOwner = Nothing,
+                value = 11,
+                rent = 6
+            },
+            OtherTileState {            -- Free
+                tileLocation = 9,
+                fundDelta = 0
+            },
+            OwnableTileState {          -- University Boulevard
+                tileLocation = 10,
+                tileOwner = Nothing,
+                value = 13,
+                rent = 7
+            },
+            OwnableTileState {          -- Main Mall
+                tileLocation = 11,
+                tileOwner = Nothing,
+                value = 15,
+                rent = 8
+            }
+        ]
     },
     turnState = TurnState {
         dieRollNumber = 0,
@@ -198,5 +300,5 @@ dieRollMax = 250
 
 dieRolls :: [(Int, Int)]
 dieRolls = zip
-    (map ((+) 1) $ map (\x -> mod x 5) $ map abs $ take dieRollMax $ randoms (mkStdGen 69))
-    (map ((+) 1) $ map (\x -> mod x 5) $ map abs $ take dieRollMax $ randoms (mkStdGen 420))
+    (map (((+) 1 . (`mod` 5)) . abs) (take dieRollMax $ randoms (mkStdGen 69)))
+    (map (((+) 1 . (`mod` 5)) . abs) (take dieRollMax $ randoms (mkStdGen 420)))
