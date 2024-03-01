@@ -39,9 +39,10 @@ playGame :: IO ()
 playGame = do
     maybeBoard <- loadJuicyPNG "resources/board-mini.png"
     die <- loadImages ["resources/dice1.png", "resources/dice2.png", "resources/dice3.png", "resources/dice4.png", "resources/dice5.png", "resources/dice6.png"]
+    players <- loadImages ["resources/player1.png", "resources/player2.png", "resources/player3.png", "resources/player4.png"]
 
     case maybeBoard of
-        Just board -> play window white gameRefreshRate initialGameState (renderGame board die) onEventGame tickGame
+        Just board -> play window white gameRefreshRate initialGameState (renderGame board die players) onEventGame tickGame
         Nothing -> putStrLn "Failed to load board file."
 
 tickGame :: Float -> GameState -> GameState
@@ -58,8 +59,8 @@ loadImages imagePaths = do
         Just images -> return images
         Nothing   -> return []
 
-renderGame :: Picture -> [Picture] -> GameState -> Picture
-renderGame board die gs = pictures [
+renderGame :: Picture -> [Picture] -> [Picture] -> GameState -> Picture
+renderGame board die players gs = pictures [
 
     -- Board
     board,
@@ -71,8 +72,10 @@ renderGame board die gs = pictures [
     translate 145 220 $ renderDie die $ getDieResult gs,
 
     -- Roll Button
-    translate 185 165 $ renderRollButton $ not $ getDieRolled gs
-    ]
+    translate 185 165 $ renderRollButton $ not $ getDieRolled gs,
+
+    -- Players
+    renderPlayers players $ getPlayerStates gs ]
 
 renderRollButton :: Bool -> Picture
 renderRollButton False = blank
@@ -94,6 +97,39 @@ renderDice die 4 = scale 0.3 0.3 $ die !! (4 - 1)
 renderDice die 5 = scale 0.3 0.3 $ die !! (5 - 1)
 renderDice die 6 = scale 0.3 0.3 $ die !! (6 - 1)
 renderDice _ _ = blank
+
+renderPlayers :: [Picture] -> [PlayerState] -> Picture
+renderPlayers [] _ = blank
+renderPlayers _ [] = blank
+renderPlayers (pic:pics) (ps:pss) = pictures [
+    let (x, y) = mapBoardLocation2Position (currentLocation ps) in
+        translate x y $ mapPlayerToShift (getPlayerID ps) pic, 
+    renderPlayers pics pss ]
+
+mapBoardLocation2Position :: BoardLocation -> (Float, Float)
+mapBoardLocation2Position 0 = (405, -400)
+mapBoardLocation2Position 1 = (120, -440)
+mapBoardLocation2Position 2 = (-150, -440)
+mapBoardLocation2Position 3 = (-405, -400)
+mapBoardLocation2Position 4 = (-450, -120)
+mapBoardLocation2Position 5 = (-450, 150)
+mapBoardLocation2Position 6 = (-405, 400)
+mapBoardLocation2Position 7 = (-130, 430)
+mapBoardLocation2Position 8 = (130, 430)
+mapBoardLocation2Position 9 = (400, 400)
+mapBoardLocation2Position 10 = (440, 130)
+mapBoardLocation2Position 11 = (440, -130)
+mapBoardLocation2Position _ = (0, 0)
+
+playerShift :: Float
+playerShift = 30
+
+mapPlayerToShift :: PlayerID -> Picture -> Picture
+mapPlayerToShift 0 pic = translate playerShift (-playerShift) pic
+mapPlayerToShift 1 pic = translate playerShift playerShift pic
+mapPlayerToShift 2 pic = translate (-playerShift) (-playerShift) pic
+mapPlayerToShift 3 pic = translate (-playerShift) playerShift pic
+mapPlayerToShift _ _ = blank
 
 --------------------------------
 -- Events

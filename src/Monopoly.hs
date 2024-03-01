@@ -22,6 +22,7 @@ module Monopoly
         OwnableTileState,
         TileState,
         TurnState,
+        currentLocation,
         findPlayerByID,
         replacePlayerState,
         findTileByLocation,
@@ -34,7 +35,9 @@ module Monopoly
         setDieRolled,
         rollDie,
         incrementDieRollNumber,
-        initialGameState
+        initialGameState,
+        getPlayerStates,
+        getPlayerID
     ) where
 
 import System.Random
@@ -70,7 +73,6 @@ data PlayerState = PlayerState {
     identifier      :: PlayerID,            -- ^ ID of the player
     funds           :: Int,                 -- ^ Amount of Money the Player Has
     currentLocation :: BoardLocation,       -- ^ Which tile the player is currently situated on
-    inJail          :: Bool,                -- ^ whether the player is in jail or not
     propertiesOwned :: [BoardLocation]      -- ^ list of properties owned by the player
 }
 
@@ -86,7 +88,7 @@ data OwnableTileState = OwnableTileState {
     tileOwner       :: PlayerID,            -- ^ Owner of the tile
     value           :: Int,                 -- ^ Value of the tile
     rent            :: Int                  -- ^ Rent to be paid when landing on this tile/property
-}   
+}
 
 -- | Tile state for an individual tile on the board
 type TileState = OwnableTileState
@@ -128,8 +130,8 @@ findTileByLocation location (tile:rest)
 -- | Function to update tile state
 replaceTileState :: BoardLocation -> OwnableTileState -> [OwnableTileState] -> [OwnableTileState]
 replaceTileState _ _ [] = []
-replaceTileState location newTileState (tile:rest) = 
-    case findTileByLocation location (tile:rest) of 
+replaceTileState location newTileState (tile:rest) =
+    case findTileByLocation location (tile:rest) of
         Just _ -> newTileState : rest
         Nothing -> tile : replaceTileState location newTileState rest
 
@@ -148,7 +150,7 @@ getDieResult gs = diceResult $ turnState gs
 
 -- | Set the die roll
 setDieResult :: (Int, Int) -> GameState -> GameState
-setDieResult pair gs = 
+setDieResult pair gs =
     gs { turnState = (turnState gs) { diceResult = pair } }
 
 -- | Get the die roll
@@ -157,20 +159,27 @@ getDieRolled gs = diceRolled $ turnState gs
 
 -- | Set the die roll
 setDieRolled :: Bool -> GameState -> GameState
-setDieRolled pair gs = 
+setDieRolled pair gs =
     gs { turnState = (turnState gs) { diceRolled = pair } }
 
 -- | Roll the die
 rollDie :: GameState -> GameState
-rollDie gs = 
+rollDie gs =
     incrementDieRollNumber $
-    setDieResult (dieRolls !! (dieRollNumber (turnState gs))) gs
+    setDieResult (dieRolls !! dieRollNumber (turnState gs)) gs
 
 -- | Increment the die roll number
 incrementDieRollNumber :: GameState -> GameState
 incrementDieRollNumber gs =
     gs { turnState = (turnState gs) { dieRollNumber = 1 + dieRollNumber (turnState gs)}}
 
+-- | Get the player states
+getPlayerStates :: GameState -> [PlayerState]
+getPlayerStates gs = playerStates $ playersState gs
+
+-- | Get the player ID
+getPlayerID :: PlayerState -> PlayerID
+getPlayerID = identifier
 
 --------------------------------
 -- Definitions
@@ -178,7 +187,32 @@ incrementDieRollNumber gs =
 initialGameState :: GameState
 initialGameState = GameState {
     playersState = PlayersState {
-        playerStates = [],
+        playerStates = [
+            PlayerState {
+                identifier = 0, 
+                funds = 10,
+                currentLocation = 0,
+                propertiesOwned = []
+            },
+            PlayerState {
+                identifier = 1, 
+                funds = 10,
+                currentLocation = 0,
+                propertiesOwned = []
+            },
+            PlayerState {
+                identifier = 2, 
+                funds = 10,
+                currentLocation = 0,
+                propertiesOwned = []
+            },
+            PlayerState {
+                identifier = 3, 
+                funds = 10,
+                currentLocation = 0,
+                propertiesOwned = []
+            }
+        ],
         playerIDTurn = 0
     },
     boardState = BoardState {
@@ -198,5 +232,5 @@ dieRollMax = 250
 
 dieRolls :: [(Int, Int)]
 dieRolls = zip
-    (map ((+) 1) $ map (\x -> mod x 5) $ map abs $ take dieRollMax $ randoms (mkStdGen 69))
-    (map ((+) 1) $ map (\x -> mod x 5) $ map abs $ take dieRollMax $ randoms (mkStdGen 420))
+    (map (((+) 1 . (`mod` 5)) . abs) (take dieRollMax $ randoms (mkStdGen 69)))
+    (map (((+) 1 . (`mod` 5)) . abs) (take dieRollMax $ randoms (mkStdGen 420)))
