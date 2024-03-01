@@ -37,7 +37,8 @@ module Monopoly
         incrementDieRollNumber,
         initialGameState,
         getPlayerStates,
-        getPlayerID
+        getPlayerID,
+        getPlayerFunds
     ) where
 
 import System.Random
@@ -180,6 +181,10 @@ getPlayerStates gs = playerStates $ playersState gs
 -- | Get the player ID
 getPlayerID :: PlayerState -> PlayerID
 getPlayerID = identifier
+
+-- | Get the player ID
+getPlayerFunds :: PlayerState -> Int
+getPlayerFunds = funds
 
 --------------------------------
 -- Definitions

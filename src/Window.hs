@@ -66,7 +66,7 @@ renderGame board die players gs = pictures [
     board,
 
     -- Debug Message
-    translate (-265) (250) $ scale 0.125 0.125 $ text $ getDebugMessage gs,
+    translate (-265) 250 $ scale 0.125 0.125 $ text $ getDebugMessage gs,
 
     -- Dice
     translate 145 220 $ renderDie die $ getDieResult gs,
@@ -75,7 +75,10 @@ renderGame board die players gs = pictures [
     translate 185 165 $ renderRollButton $ not $ getDieRolled gs,
 
     -- Players
-    renderPlayers players $ getPlayerStates gs ]
+    renderPlayers players $ getPlayerStates gs,
+
+    -- Funds
+    translate (-265) 225 $ renderFunds players $ getPlayerStates gs ]
 
 renderRollButton :: Bool -> Picture
 renderRollButton False = blank
@@ -86,7 +89,7 @@ renderRollButton True = pictures [
 
 renderDie :: [Picture] -> (Int, Int) -> Picture
 renderDie die (a, b) = pictures [
-    renderDice die a, 
+    renderDice die a,
     translate 80 0 $ renderDice die b ]
 
 renderDice :: [Picture] -> Int -> Picture
@@ -102,24 +105,24 @@ renderPlayers :: [Picture] -> [PlayerState] -> Picture
 renderPlayers [] _ = blank
 renderPlayers _ [] = blank
 renderPlayers (pic:pics) (ps:pss) = pictures [
-    let (x, y) = mapBoardLocation2Position (currentLocation ps) in
-        translate x y $ mapPlayerToShift (getPlayerID ps) pic, 
+    let (x, y) = mapBoardLocation2Position4PlayerPos (currentLocation ps) in
+        translate x y $ mapPlayerToShift (getPlayerID ps) pic,
     renderPlayers pics pss ]
 
-mapBoardLocation2Position :: BoardLocation -> (Float, Float)
-mapBoardLocation2Position 0 = (405, -400)
-mapBoardLocation2Position 1 = (120, -440)
-mapBoardLocation2Position 2 = (-150, -440)
-mapBoardLocation2Position 3 = (-405, -400)
-mapBoardLocation2Position 4 = (-450, -120)
-mapBoardLocation2Position 5 = (-450, 150)
-mapBoardLocation2Position 6 = (-405, 400)
-mapBoardLocation2Position 7 = (-130, 430)
-mapBoardLocation2Position 8 = (130, 430)
-mapBoardLocation2Position 9 = (400, 400)
-mapBoardLocation2Position 10 = (440, 130)
-mapBoardLocation2Position 11 = (440, -130)
-mapBoardLocation2Position _ = (0, 0)
+mapBoardLocation2Position4PlayerPos :: BoardLocation -> (Float, Float)
+mapBoardLocation2Position4PlayerPos 0 = (405, -400)
+mapBoardLocation2Position4PlayerPos 1 = (120, -440)
+mapBoardLocation2Position4PlayerPos 2 = (-150, -440)
+mapBoardLocation2Position4PlayerPos 3 = (-405, -400)
+mapBoardLocation2Position4PlayerPos 4 = (-450, -120)
+mapBoardLocation2Position4PlayerPos 5 = (-450, 150)
+mapBoardLocation2Position4PlayerPos 6 = (-405, 400)
+mapBoardLocation2Position4PlayerPos 7 = (-130, 430)
+mapBoardLocation2Position4PlayerPos 8 = (130, 430)
+mapBoardLocation2Position4PlayerPos 9 = (400, 400)
+mapBoardLocation2Position4PlayerPos 10 = (440, 130)
+mapBoardLocation2Position4PlayerPos 11 = (440, -130)
+mapBoardLocation2Position4PlayerPos _ = (0, 0)
 
 playerShift :: Float
 playerShift = 30
@@ -130,6 +133,14 @@ mapPlayerToShift 1 pic = translate playerShift playerShift pic
 mapPlayerToShift 2 pic = translate (-playerShift) (-playerShift) pic
 mapPlayerToShift 3 pic = translate (-playerShift) playerShift pic
 mapPlayerToShift _ _ = blank
+
+renderFunds :: [Picture] -> [PlayerState] -> Picture
+renderFunds [] _ = blank
+renderFunds _ [] = blank
+renderFunds (pic:pics) (ps:pss) = pictures [
+    let (x, y) = mapBoardLocation2Position4PlayerPos (currentLocation ps) in
+        scale 0.125 0.125 $ text ("Player " ++ show (getPlayerID ps) ++ " has $" ++ show (getPlayerFunds ps)),
+    translate 0 (-20) $ renderFunds pics pss ]
 
 --------------------------------
 -- Events
@@ -147,7 +158,7 @@ onEventGame e gs =
 onClick :: (Float, Float) -> GameState -> GameState
 onClick (x, y) gs
     -- Clicked on the Roll Dice Button
-    | (x >= 110.0) && (y >= 150.0) && (x <= 260.0) && (y <= 180.0) && not (getDieRolled gs) =
+    | x >= 110.0 && y >= 150.0 && x <= 260.0 && y <= 180.0 && not (getDieRolled gs) =
         rollDie $
         setDieRolled True $
         setDebugMessage ("(" ++ show x ++ "," ++ show y ++ ")") gs
