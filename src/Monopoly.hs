@@ -492,7 +492,7 @@ initialGameState = GameState {
             OwnableTileState {          -- University Boulevard
                 name = "University Boulevard",
                 tileLocation = 10,
-                tileOwner = Just 0,
+                tileOwner = Nothing,
                 value = 13,
                 rent = 7
             },
