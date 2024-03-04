@@ -87,14 +87,20 @@ renderGame board die players gs = pictures [
     translate (-260) (-130) $ renderTurn gs,
 
     -- Buy & Pass Property Prompt
-    translate 0 205 $ renderBuyAndPassPrompt (getPropertyBuyable gs) (getCurrentPropertyName gs) ]
+    translate 0 205 $ renderBuyAndPassPrompt (getPropertyBuyable gs) (getCurrentPropertyName gs),
+    
+    -- Pay Rent Button
+    translate 0 205 $ renderPayRent $ getRentToBePayed gs,
+    
+    -- Next Turn Button
+    translate 0 205 $ renderNextTurn $ getTurnComplete gs ]
+
 
 renderRollButton :: Bool -> Picture
 renderRollButton False = blank
 renderRollButton True = pictures [
     color (greyN 0.5) $ rectangleSolid 150 30,
-    translate (-60) (-5) $ color white $ scale 0.15 0.15 $ text "Roll the Die!"
-    ]
+    translate (-60) (-5) $ color white $ scale 0.15 0.15 $ text "Roll the Die!" ]
 
 renderDie :: [Picture] -> (Int, Int) -> Picture
 renderDie die (a, b) = pictures [
@@ -187,8 +193,18 @@ renderBuyAndPassPrompt True tileName = pictures [
     translate (80 - 35) 0 $ color (greyN 0.5) $ rectangleSolid 70 30,
     translate 20 (-5) $ color white $ scale 0.15 0.15 $ text "Pass" ]
 
--- renderPayRent :: Bool -> Picture 
--- renderPayRent 
+renderPayRent :: Bool -> Picture
+renderPayRent False = blank
+renderPayRent True = pictures [
+    color (greyN 0.5) $ rectangleSolid 150 30,
+    translate (-60) (-5) $ color white $ scale 0.15 0.15 $ text "Pay Rent" ]
+
+renderNextTurn :: Bool -> Picture
+renderNextTurn False = blank
+renderNextTurn True = pictures [
+    color (greyN 0.5) $ rectangleSolid 150 30,
+    translate (-60) (-5) $ color white $ scale 0.15 0.15 $ text "Next Turn" ]
+
 
 --------------------------------
 -- Events
@@ -200,8 +216,8 @@ onEventGame e gs =
         EventKey key _ _ point ->
             case key of
                 MouseButton _ -> onClick point gs
-                otherwise -> gs
-        otherwise -> gs
+                _ -> gs
+        _ -> gs
 
 onClick :: (Float, Float) -> GameState -> GameState
 onClick (x, y) gs
@@ -219,6 +235,11 @@ onClick (x, y) gs
     -- Clicked on the Pass Button
     | getPropertyBuyable gs && x >= 10 && y >= 190 && x <= 80 && y <= 220 = 
         setDebugMessage ("(" ++ show x ++ "," ++ show y ++ ") pass") gs
+
+    -- Clicked on the Pay Rent Button
+    | getRentToBePayed gs && x >= -70 && y >= 190 && x <= 80 && y <= 220 = 
+        currentPlayerPayRent $
+        setDebugMessage ("(" ++ show x ++ "," ++ show y ++ ") pay") gs
 
     -- Useless click
     | otherwise = setDebugMessage ("(" ++ show x ++ "," ++ show y ++ ")") gs

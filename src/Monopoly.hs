@@ -41,10 +41,14 @@ module Monopoly
         getCurrentPlayerID,
         getPropertyBuyable,
         advanceCurrentPlayer,
-        getCurrentPropertyName
+        getCurrentPropertyName,
+        getRentToBePayed,
+        getTurnComplete,
+        currentPlayerPayRent
     ) where
 
 import System.Random
+import qualified Data.Maybe
 
 --------------------------------
 -- Data Definitions
@@ -105,8 +109,8 @@ data TurnState = TurnState {
     diceRolled      :: Bool,                -- ^ Whether or not the dice has been rolled
     diceResult      :: (Int, Int),          -- ^ Resulting roll of the dice
     propertyBuyable :: Bool,                -- ^ Can buy property
-    turnComplete    :: Bool,                -- ^ Turn can be completed
-    rentToBePayed   :: Bool                -- ^ Whether we have to pay rent on the current tile
+    rentToBePayed   :: Bool,                -- ^ Whether we have to pay rent on the current tile
+    turnComplete    :: Bool                 -- ^ Turn can be completed
 }
 
 --------------------------------
@@ -123,10 +127,9 @@ findPlayerByID id (p:ps)
 -- | Function to update player state
 replacePlayerState :: PlayerID -> PlayerState -> [PlayerState] -> [PlayerState]
 replacePlayerState _ _ [] = []
-replacePlayerState playerID newPlayerState (p:ps) =
-    case findPlayerByID playerID (p:ps) of
-        Just _ -> newPlayerState : ps
-        Nothing -> p : replacePlayerState playerID newPlayerState ps
+replacePlayerState playerID newPlayerState (p:ps)
+    | identifier p == playerID = (newPlayerState:ps)
+    | otherwise = p : replacePlayerState playerID newPlayerState ps
 
 -- | Get the debug message from the game state
 getDebugMessage :: GameState -> String
@@ -219,13 +222,13 @@ advanceCurrentPlayer gs =
         newRentToBePayed = case tile of
             OwnableTileState _ _ maybeOwner _ _ ->
                 case maybeOwner of
-                    Just owner -> owner == pid
+                    Just owner -> owner /= pid
                     Nothing -> False
             OtherTileState _ _ -> False
         newPropertyBuyable = case tile of
             OwnableTileState _ _ maybeOwner _ _ ->
                 case maybeOwner of
-                    Just owner -> False
+                    Just _ -> False
                     Nothing -> True
             OtherTileState _ _ -> False
         newTurnComplete = case tile of
@@ -245,6 +248,39 @@ getCurrentPropertyName gs =
         tid = currentLocation ps
         tile = tilesState (boardState gs) !! tid
 
+-- | Get whether or not a property has rent to be payed
+getRentToBePayed :: GameState -> Bool
+getRentToBePayed gs = rentToBePayed $ turnState gs
+
+-- | Get whether or not the turn can be completed
+getTurnComplete :: GameState -> Bool
+getTurnComplete gs = turnComplete $ turnState gs
+
+-- | Current player pays rent
+currentPlayerPayRent :: GameState -> GameState
+currentPlayerPayRent gs =
+    gs {
+        playersState = (playersState gs) {
+            playerStates =
+                replacePlayerState renterID (renterPS { funds = renterFunds - rentCost }) $
+                replacePlayerState ownerID (ownerPS { funds = ownerFunds + rentCost }) $
+                playerStates $ playersState gs
+        },
+        turnState = (turnState gs) {
+            rentToBePayed = False,
+            turnComplete = True
+        }
+    }
+    where
+        renterID = playerIDTurn $ playersState gs
+        renterPS = playerStates (playersState gs) !! renterID
+        renterFunds = funds renterPS
+        tid = currentLocation $ playerStates (playersState gs) !! renterID
+        tile = tilesState (boardState gs) !! tid
+        ownerID = Data.Maybe.fromMaybe (- 1) (tileOwner tile)
+        ownerPS = playerStates (playersState gs) !! ownerID
+        ownerFunds = funds ownerPS
+        rentCost = rent tile
 
 --------------------------------
 -- Definitions
@@ -344,7 +380,7 @@ initialGameState = GameState {
             OwnableTileState {          -- University Boulevard
                 name = "University Boulevard",
                 tileLocation = 10,
-                tileOwner = Nothing,
+                tileOwner = Just 1,
                 value = 13,
                 rent = 7
             },
@@ -363,7 +399,8 @@ initialGameState = GameState {
         diceRolled = False,
         diceResult = (2, 3),
         propertyBuyable = False,
-        rentToBePayed = False
+        rentToBePayed = False,
+        turnComplete = False
     }
 }
 
