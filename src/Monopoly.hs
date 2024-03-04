@@ -183,6 +183,42 @@ getTileStates gs = tilesState (boardState gs)
 getCurrentPlayerID :: GameState -> PlayerID
 getCurrentPlayerID gs = playerIDTurn (playersState gs)
 
+-- | Update the GameState when someones presses the buy button 
+currentPlayerBuy :: GameState -> GameState
+currentPlayerBuy gameState@(GameState playersState _ _) = 
+    let currentPlayerID = playerIDTurn playersState
+        newPlayers = updatePlayerState currentPlayerID (buyPropertyForPlayer currentPlayerID (playerStates playersState))
+    in gameState { playersState = newPlayers }
+
+-- | Update the GameState when someone presses the pass button 
+currentPlayerPass :: GameState -> GameState
+currentPlayerPass gameState@(GameState playersState _ _) = 
+    let currentPlayerID = playerIDTurn playersState
+        newPlayerIDTurn = getNextPlayerIDTurn currentPlayerID (playerStates playersState)
+    in gameState { playersState = playersState { playerIDTurn = newPlayerIDTurn } }
+
+-- | Buy a property for a player
+buyPropertyForPlayer :: PlayerID -> [PlayerState] -> [PlayerState]
+buyPropertyForPlayer _ [] = []
+buyPropertyForPlayer targetID (player:players)
+    | identifier player == targetID =
+        let newProperties = 1 : propertiesOwned player -- Assuming '1' is the BoardLocation of the property bought
+        in player { propertiesOwned = newProperties } : players
+    | otherwise = player : buyPropertyForPlayer targetID players
+
+-- | Update a player state
+updatePlayerState :: PlayerID -> [PlayerState] -> PlayersState
+updatePlayerState _ [] = error "Player not found."
+updatePlayerState targetID (player:players)
+    | identifier player == targetID = PlayersState (player : players) targetID
+    | otherwise = updatePlayerState targetID players
+
+-- | Get the next player ID for next turn\
+getNextPlayerIDTurn :: PlayerID -> [PlayerState] -> PlayerID
+getNextPlayerIDTurn _ [] = error "Player not found."
+getNextPlayerIDTurn currentID players = 
+    let (nextPlayer:_) = dropWhile (\player -> identifier player /= currentID) (tail (cycle players))
+    in identifier nextPlayer
 
 --------------------------------
 -- Definitions

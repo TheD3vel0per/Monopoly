@@ -119,5 +119,45 @@ testReplaceTileState = TestCase $ do
                 tiles 
                 updatedTiles3
 
+main :: IO ()
+main = hspec $ do
+    describe "currentPlayerBuy" $ do
+        it "should buy a property for the current player" $ do
+            let initialState = GameState
+                    { playersState = PlayersState
+                        { playerStates = [PlayerState 1 100 0 []]  -- Assuming only one player
+                        , playerIDTurn = 1
+                        }
+                    , boardState = undefined  -- Not relevant for this test
+                    , turnState = undefined   -- Not relevant for this test
+                    }
+                finalState = currentPlayerBuy initialState
+            -- Assuming the property bought has a BoardLocation of 1
+            propertiesOwned (head (playerStates (playersState finalState))) `shouldBe` [1]
+
+    describe "currentPlayerPass" $ do
+        it "should pass the turn to the next player" $ do
+            let initialState = GameState
+                    { playersState = PlayersState
+                        { playerStates = [PlayerState 1 100 0 [], PlayerState 2 100 0 []]  -- Assuming two players
+                        , playerIDTurn = 1
+                        }
+                    , boardState = undefined  -- Not relevant for this test
+                    , turnState = undefined   -- Not relevant for this test
+                    }
+                finalState = currentPlayerPass initialState
+            playerIDTurn (playersState finalState) `shouldBe` 2
+
+        it "should wrap around to the first player after the last player" $ do
+            let initialState = GameState
+                    { playersState = PlayersState
+                        { playerStates = [PlayerState 1 100 0 [], PlayerState 2 100 0 []]  -- Assuming two players
+                        , playerIDTurn = 2
+                        }
+                    , boardState = undefined  -- Not relevant for this test
+                    , turnState = undefined   -- Not relevant for this test
+                    }
+                finalState = currentPlayerPass initialState
+            playerIDTurn (playersState finalState) `shouldBe` 1
 
 -}
