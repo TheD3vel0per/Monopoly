@@ -93,7 +93,10 @@ renderGame board die players gs = pictures [
     translate 0 (205 + 20) $ renderPayRent $ getRentToBePayed gs,
     
     -- Next Turn Button
-    translate 0 (205 - 20) $ renderNextTurn $ getTurnComplete gs ]
+    translate 0 (205 - 20) $ renderNextTurn $ getTurnComplete gs,
+    
+    -- Legend
+    translate 20 0 $ renderLegend players ]
 
 
 renderRollButton :: Bool -> Picture
@@ -209,6 +212,18 @@ renderNextTurn False = blank
 renderNextTurn True = pictures [
     color (greyN 0.5) $ rectangleSolid 150 30,
     translate (-60) (-5) $ color white $ scale 0.15 0.15 $ text "Next Turn" ]
+
+renderLegend :: [Picture] -> Picture
+-- renderLegend _ = blank
+renderLegend players = pictures [
+    translate (-250) (-180) $ players !! 0,
+    translate (-220) (-180) $ scale 0.125 0.125 $ text "Player 0",
+    translate (0) (-180) $ players !! 1,
+    translate (40) (-180) $ scale 0.125 0.125 $ text "Player 1",
+    translate (-260) (-240) $ players !! 2,
+    translate (-220) (-240) $ scale 0.125 0.125 $ text "Player 2",
+    translate (0) (-250) $ players !! 3,
+    translate (40) (-240) $ scale 0.125 0.125 $ text "Player 3" ]
 
 
 --------------------------------
