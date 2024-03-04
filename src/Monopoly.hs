@@ -42,6 +42,7 @@ module Monopoly
     ) where
 
 import System.Random
+import Data.List (find)
 
 --------------------------------
 -- Data Definitions
@@ -183,48 +184,57 @@ getTileStates gs = tilesState (boardState gs)
 getCurrentPlayerID :: GameState -> PlayerID
 getCurrentPlayerID gs = playerIDTurn (playersState gs)
 
--- | Update the GameState when someones presses the buy button 
-currentPlayerBuy :: GameState -> GameState
-currentPlayerBuy gameState@(GameState playersState _ _) = 
+-- | Add salary to the current user
+addSalaryToCurrentUser :: Int -> GameState -> GameState
+addSalaryToCurrentUser salary gameState@(GameState playersState _ _) =
     let currentPlayerID = playerIDTurn playersState
-        newPlayers = updatePlayerState currentPlayerID (buyPropertyForPlayer currentPlayerID (playerStates playersState))
-    in gameState { playersState = newPlayers }
+        currentPlayerState = findPlayerState currentPlayerID playersState
+        updatedPlayersState = case currentPlayerState of
+            Just playerState ->
+                let updatedFunds = funds playerState + salary
+                    updatedPlayerState = playerState { funds = updatedFunds }
+                in updatePlayerState currentPlayerID updatedPlayerState playersState
+            Nothing -> error "Current player not found." -- Handle error if current player is not found
+    in gameState { playersState = updatedPlayersState }
 
--- | Update the GameState when someone presses the pass button 
-currentPlayerPass :: GameState -> GameState
-currentPlayerPass gameState@(GameState playersState _ _) = 
-    let currentPlayerID = playerIDTurn playersState
-        newPlayerIDTurn = getNextPlayerIDTurn currentPlayerID (playerStates playersState)
-    in gameState { playersState = playersState { playerIDTurn = newPlayerIDTurn } }
-
--- | Buy a property for a player
-buyPropertyForPlayer :: PlayerID -> TileState -> [TileState] -> [PlayerState] -> ([TileState], [PlayerState])
-buyPropertyForPlayer _ _ [] _ = error "No properties available."
-buyPropertyForPlayer _ _ _ [] = error "No players available."
-buyPropertyForPlayer targetID property (tile:tiles) players@(player:otherPlayers)
-    | identifier player == targetID =
-        let updatedProperty = property { tileOwner = Just targetID }
-            updatedTiles = updatedProperty: tiles
-            newProperties = updatedProperty : propertiesOwned player
-            updatedPlayer = player { propertiesOwned = newProperties } 
-            updatedPlayers = updatedPlayer : otherPlayers
-    | otherwise = 
-        let(updatedTiles, updatedPlayers) = buyPropertyForPlayer targetID property tiles otherPlayers
-        in (tile : updatedTiles, player : updatedPlayers)
+-- | Find the player state corresponding to the given ID, if it exists
+findPlayerState :: PlayerID -> PlayersState -> Maybe PlayerState
+findPlayerState targetID (PlayersState playerStates _) =
+    case find (\playerState -> identifier playerState == targetID) playerStates of
+        Just playerState -> Just playerState
+        Nothing -> Nothing
 
 -- | Update a player state
-updatePlayerState :: PlayerID -> [PlayerState] -> PlayersState
-updatePlayerState _ [] = error "Player not found."
-updatePlayerState targetID (player:players)
-    | identifier player == targetID = PlayersState (player : players) targetID
-    | otherwise = updatePlayerState targetID players
+updatePlayerState :: PlayerID -> PlayerState -> PlayersState -> PlayersState
+updatePlayerState _ _ (PlayersState [] _) = error "Player not found."
+updatePlayerState targetID updatedPlayer (PlayersState (player:players) turnID)
+    | identifier player == targetID = PlayersState (updatedPlayer : players) turnID
+    | otherwise = PlayersState (player : rest) turnID
+    where
+        PlayersState rest _ = updatePlayerState targetID updatedPlayer (PlayersState players turnID)
 
--- | Get the next player ID for next turn\
-getNextPlayerIDTurn :: PlayerID -> [PlayerState] -> PlayerID
-getNextPlayerIDTurn _ [] = error "Player not found."
-getNextPlayerIDTurn currentID players = 
-    let (nextPlayer:_) = dropWhile (\player -> identifier player /= currentID) (tail (cycle players))
-    in identifier nextPlayer
+-- | Remove ownership of all properties for a bankrupt player
+removeOwnershipForBankruptPlayer :: PlayerID -> GameState -> GameState
+removeOwnershipForBankruptPlayer targetID gameState@(GameState playersState boardState _) =
+    let maybeBankruptPlayer = findPlayerState targetID playersState
+    in case maybeBankruptPlayer of
+        Just bankruptPlayer ->
+            let updatedPlayers = updatePlayerState targetID (clearOwnership bankruptPlayer) playersState
+                updatedTiles = clearOwnershipFromTiles targetID (tilesState boardState)
+            in gameState { playersState = updatedPlayers, boardState = boardState { tilesState = updatedTiles } }
+        Nothing -> error "Bankrupt player not found."
+
+-- | Clear ownership of all properties owned by a player
+clearOwnership :: PlayerState -> PlayerState
+clearOwnership player = player { propertiesOwned = [] }
+
+-- | Clear ownership of all tiles owned by a player
+clearOwnershipFromTiles :: PlayerID -> [TileState] -> [TileState]
+clearOwnershipFromTiles _ [] = []
+clearOwnershipFromTiles targetID (tile:tiles) =
+    case tileOwner tile of
+        Just ownerID | ownerID == targetID -> tile { tileOwner = Nothing } : clearOwnershipFromTiles targetID tiles
+        _ -> tile : clearOwnershipFromTiles targetID tiles
 
 --------------------------------
 -- Definitions

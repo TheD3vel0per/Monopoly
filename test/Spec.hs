@@ -160,4 +160,51 @@ main = hspec $ do
                 finalState = currentPlayerPass initialState
             playerIDTurn (playersState finalState) `shouldBe` 1
 
+main :: IO ()
+main = hspec $ do
+  describe "removeOwnership" $ do
+    context "when a player owns properties" $ do
+      it "removes ownership of all properties when a player goes bankrupt" $ do
+        let initialPlayerState = PlayerState 1 100 0 [1, 2, 3]
+            updatedPlayerState = removeOwnership initialPlayerState
+        propertiesOwned updatedPlayerState `shouldBe` []
+
+    context "when a player owns no properties" $ do
+      it "does not change the list of owned properties" $ do
+        let initialPlayerState = PlayerState 1 100 0 []
+            updatedPlayerState = removeOwnership initialPlayerState
+        propertiesOwned updatedPlayerState `shouldBe` []
+
+  describe "clearOwnership" $ do
+    context "when a player owns properties" $ do
+      it "clears ownership of all properties when a player goes bankrupt" $ do
+        let initialGameState = GameState (PlayersState [PlayerState 1 100 0 [1, 2, 3]] 1) (BoardState 3 []) (TurnState 1 "" False (0, 0) False False)
+            updatedGameState = clearOwnership initialGameState
+        propertiesOwned (head (playerStates (playersState updatedGameState))) `shouldBe` []
+
+    context "when a player owns no properties" $ do
+      it "does not change the list of owned properties" $ do
+        let initialGameState = GameState (PlayersState [PlayerState 1 100 0 []] 1) (BoardState 3 []) (TurnState 1 "" False (0, 0) False False)
+            updatedGameState = clearOwnership initialGameState
+        propertiesOwned (head (playerStates (playersState updatedGameState))) `shouldBe` []
+
+  describe "clearOwnershipFromTiles" $ do
+    context "when there are tiles with ownership" $ do
+      it "clears ownership of all tiles when a player goes bankrupt" $ do
+        let initialGameState = GameState (PlayersState [PlayerState 1 100 0 [1, 2, 3]] 1) (BoardState 3 [OwnableTileState "Property1" 1 (Just 1) 100 10, OwnableTileState "Property2" 2 (Just 1) 200 20, OwnableTileState "Property3" 3 (Just 1) 300 30]) (TurnState 1 "" False (0, 0) False False)
+            updatedGameState = clearOwnershipFromTiles initialGameState
+        map tileOwner (tilesState (boardState updatedGameState)) `shouldBe` [Nothing, Nothing, Nothing]
+
+    context "when there are no tiles with ownership" $ do
+      it "does not change the ownership status of any tile" $ do
+        let initialGameState = GameState (PlayersState [PlayerState 1 100 0 []] 1) (BoardState 3 [OwnableTileState "Property1" 1 Nothing 100 10, OwnableTileState "Property2" 2 Nothing 200 20, OwnableTileState "Property3" 3 Nothing 300 30]) (TurnState 1 "" False (0, 0) False False)
+            updatedGameState = clearOwnershipFromTiles initialGameState
+        map tileOwner (tilesState (boardState updatedGameState)) `shouldBe` [Nothing, Nothing, Nothing]
+
+    context "when there are no tiles on the board" $ do
+      it "does not change the ownership status of any tile" $ do
+        let initialGameState = GameState (PlayersState [PlayerState 1 100 0 []] 1) (BoardState 0 []) (TurnState 1 "" False (0, 0) False False)
+            updatedGameState = clearOwnershipFromTiles initialGameState
+        map tileOwner (tilesState (boardState updatedGameState)) `shouldBe` []
+
 -}
