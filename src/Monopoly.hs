@@ -240,7 +240,10 @@ advanceCurrentPlayer gs =
         PlayerState _ _ currentLocation _ = pps !! pid
         (diceOne, diceTwo) = diceResult
         newLocation = (currentLocation + diceOne + diceTwo) `mod` tileModulus
-        newPs = (pps !! pid) { currentLocation = newLocation }
+        newPs = (pps !! pid) { 
+            currentLocation = newLocation,
+            funds = fundsDelta + funds (pps !! pid) 
+        }
         tile = tts !! newLocation
         newRentToBePayed = case tile of
             OwnableTileState _ _ maybeOwner _ _ ->
@@ -260,7 +263,10 @@ advanceCurrentPlayer gs =
                     Just owner -> owner == pid
                     Nothing -> False
             OtherTileState {} -> True
-
+        passedGo = currentLocation >= newLocation
+        fundsDelta = case tile of
+            OwnableTileState {} -> 0 + if passedGo then 5 else 0
+            OtherTileState _ fundDelta -> fundDelta + if passedGo then 5 else 0
 
 -- | Get current property name
 getCurrentPropertyName :: GameState -> String
@@ -515,5 +521,5 @@ dieRollMax = 250
 
 dieRolls :: [(Int, Int)]
 dieRolls = zip
-    (map (((+) 1 . (`mod` 5)) . abs) (take dieRollMax $ randoms (mkStdGen 69)))
-    (map (((+) 1 . (`mod` 5)) . abs) (take dieRollMax $ randoms (mkStdGen 420)))
+    (map (((+) 1 . (`mod` 5)) . abs) (take dieRollMax $ randoms (mkStdGen 234)))
+    (map (((+) 1 . (`mod` 5)) . abs) (take dieRollMax $ randoms (mkStdGen 443)))
