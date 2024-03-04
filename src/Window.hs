@@ -87,7 +87,7 @@ renderGame board die players gs = pictures [
     translate (-260) (-130) $ renderTurn gs,
 
     -- Buy & Pass Property Prompt
-    translate (-5) (205 + 15) $ renderBuyAndPassPrompt (getPropertyBuyable gs) (getCurrentPropertyName gs),
+    translate (-5) (205 + 15) $ renderBuyAndPassPrompt (getPropertyBuyable gs) (currentPlayerCanBuy gs) (getCurrentPropertyName gs),
     
     -- Pay Rent Button
     translate 0 (205 + 20) $ renderPayRent $ getRentToBePayed gs,
@@ -184,14 +184,19 @@ renderTurn :: GameState -> Picture
 renderTurn gs = let pid = getCurrentPlayerID gs in
     scale 0.25 0.25 $ text ("It's Player " ++ show pid ++ "'s turn.")
 
-renderBuyAndPassPrompt :: Bool -> String -> Picture
-renderBuyAndPassPrompt False _ = blank
-renderBuyAndPassPrompt True tileName = pictures [
+renderBuyAndPassPrompt :: Bool -> Bool -> String -> Picture
+renderBuyAndPassPrompt False _ _ = blank
+renderBuyAndPassPrompt True False tileName = pictures [
+    translate (-70) 30 $ scale 0.125 0.125 $ text tileName,
+    translate (80 - 35) 0 $ color (greyN 0.5) $ rectangleSolid 70 30,
+    translate 20 (-5) $ color white $ scale 0.15 0.15 $ text "Pass" ]
+renderBuyAndPassPrompt True True tileName = pictures [
     translate (-70) 30 $ scale 0.125 0.125 $ text tileName,
     translate (-35) 0 $ color (greyN 0.5) $ rectangleSolid 70 30,
     translate (-60) (-5) $ color white $ scale 0.15 0.15 $ text "Buy",
     translate (80 - 35) 0 $ color (greyN 0.5) $ rectangleSolid 70 30,
     translate 20 (-5) $ color white $ scale 0.15 0.15 $ text "Pass" ]
+renderBuyAndPassPrompt _ _ _ = blank
 
 renderPayRent :: Bool -> Picture
 renderPayRent False = blank
@@ -229,7 +234,8 @@ onClick (x, y) gs
         setDebugMessage ("(" ++ show x ++ "," ++ show y ++ ")") gs
 
     -- Clicked on the Buy Button
-    | getPropertyBuyable gs && x >= -75 && y >= 205 && x <= -5 && y <= 235 = 
+    | currentPlayerCanBuy gs && getPropertyBuyable gs && x >= -75 && y >= 205 && x <= -5 && y <= 235 =
+        currentPlayerBuy $ 
         setDebugMessage ("(" ++ show x ++ "," ++ show y ++ ") buy") gs
 
     -- Clicked on the Pass Button

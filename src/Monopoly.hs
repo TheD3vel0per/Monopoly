@@ -24,6 +24,7 @@ module Monopoly
         currentLocation,
         findPlayerByID,
         replacePlayerState,
+        replaceTileState,
         getDebugMessage,
         setDebugMessage,
         getDieResult,
@@ -48,6 +49,8 @@ module Monopoly
         getTurnComplete,
         setTurnComplete,
         currentPlayerPayRent,
+        currentPlayerBuy,
+        currentPlayerCanBuy,
         finishTurn
     ) where
 
@@ -135,6 +138,13 @@ replacePlayerState playerID newPlayerState (p:ps)
     | identifier p == playerID = newPlayerState:ps
     | otherwise = p : replacePlayerState playerID newPlayerState ps
 
+-- | Function to update player state
+replaceTileState :: BoardLocation -> TileState -> [TileState] -> [TileState]
+replaceTileState _ _ [] = []
+replaceTileState tileID newTileState (t:ts)
+    | tileLocation t == tileID = newTileState : ts
+    | otherwise = t : replaceTileState tileID newTileState ts
+
 -- | Get the debug message from the game state
 getDebugMessage :: GameState -> String
 getDebugMessage gs = debugMessage (turnState gs)
@@ -211,6 +221,8 @@ setPropertyBuyable b gs = gs {
 -- | Advance the current player
 advanceCurrentPlayer :: GameState -> GameState
 advanceCurrentPlayer gs =
+    -- TODO add delta for any tile we land on negative tiles
+    -- TODO add +20 for any time we pass go
     gs {
         playersState = ps {
             playerStates = replacePlayerState pid newPs pps
@@ -310,6 +322,54 @@ currentPlayerPayRent gs =
         ownerPS = playerStates (playersState gs) !! ownerID
         ownerFunds = funds ownerPS
         rentCost = rent tile
+
+-- | Current player pays rent
+currentPlayerBuy :: GameState -> GameState
+-- currentPlayerBuy gs = gs
+currentPlayerBuy gs =
+    gs {
+        playersState = (playersState gs) {
+            playerStates =
+                replacePlayerState pid updatedPlayerState $
+                playerStates $ playersState gs
+        },
+        boardState = (boardState gs) {
+            tilesState =
+                replaceTileState tid updatedTileState $
+                tilesState $ boardState gs
+        },
+        turnState = (turnState gs) {
+            propertyBuyable = False,
+            rentToBePayed = False,
+            turnComplete = True
+        }
+    } where
+        pid = playerIDTurn $ playersState gs
+        pps = playerStates (playersState gs) !! pid
+        tid = currentLocation $ playerStates (playersState gs) !! pid
+        tile = tilesState (boardState gs) !! tid
+        cost = value tile
+        updatedPlayerState = pps {
+            propertiesOwned = tid : propertiesOwned pps,
+            funds = funds pps - cost
+        }
+        updatedTileState = tile {
+            tileOwner = Just pid
+        }
+
+currentPlayerCanBuy :: GameState -> Bool
+-- currentPlayerCanBuy _ = True
+currentPlayerCanBuy gs =
+    case tile of
+        OwnableTileState {} -> canBuy
+        OtherTileState {} -> False
+    where
+        pid = playerIDTurn $ playersState gs
+        pps = playerStates (playersState gs) !! pid
+        tid = currentLocation $ playerStates (playersState gs) !! pid
+        tile = tilesState (boardState gs) !! tid
+        cost = value tile
+        canBuy = cost < funds pps
 
 -- | Current player finishes turn
 finishTurn :: GameState -> GameState
