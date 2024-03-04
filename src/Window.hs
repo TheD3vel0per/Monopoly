@@ -84,7 +84,10 @@ renderGame board die players gs = pictures [
     renderOwnership $ getTileStates gs,
 
     -- Turn Indicator
-    translate (-260) (-130) $ renderTurn gs ]
+    translate (-260) (-130) $ renderTurn gs,
+
+    -- Buy & Pass Property Prompt
+    translate 0 205 $ renderBuyAndPassPrompt (getPropertyBuyable gs) (getCurrentPropertyName gs) ]
 
 renderRollButton :: Bool -> Picture
 renderRollButton False = blank
@@ -134,10 +137,10 @@ playerShift :: Float
 playerShift = 30
 
 mapPlayerToShift :: PlayerID -> Picture -> Picture
-mapPlayerToShift 0 pic = translate playerShift (-playerShift) pic
+mapPlayerToShift 0 pic = translate (-playerShift) playerShift pic
 mapPlayerToShift 1 pic = translate playerShift playerShift pic
 mapPlayerToShift 2 pic = translate (-playerShift) (-playerShift) pic
-mapPlayerToShift 3 pic = translate (-playerShift) playerShift pic
+mapPlayerToShift 3 pic = translate playerShift (-playerShift) pic
 mapPlayerToShift _ _ = blank
 
 renderFunds :: [Picture] -> [PlayerState] -> Picture
@@ -152,7 +155,7 @@ renderOwnership :: [TileState] -> Picture
 renderOwnership [] = blank
 renderOwnership (ts:tss) = pictures [
     case ts of
-        OwnableTileState tid owner _ _ ->
+        OwnableTileState _ tid owner _ _ ->
             case owner of
                 Just pid -> let (x, y) = mapBoardLocation2Position4OwnerPos tid in
                     translate x y $ scale 0.1 0.1 $ text ("Owned by Player " ++ show pid)
@@ -175,6 +178,18 @@ renderTurn :: GameState -> Picture
 renderTurn gs = let pid = getCurrentPlayerID gs in
     scale 0.25 0.25 $ text ("It's Player " ++ show pid ++ "'s turn.")
 
+renderBuyAndPassPrompt :: Bool -> String -> Picture
+renderBuyAndPassPrompt False _ = blank
+renderBuyAndPassPrompt True tileName = pictures [
+    translate (-70) 30 $ scale 0.125 0.125 $ text tileName,
+    translate (-35) 0 $ color (greyN 0.5) $ rectangleSolid 70 30,
+    translate (-60) (-5) $ color white $ scale 0.15 0.15 $ text "Buy",
+    translate (80 - 35) 0 $ color (greyN 0.5) $ rectangleSolid 70 30,
+    translate 20 (-5) $ color white $ scale 0.15 0.15 $ text "Pass" ]
+
+-- renderPayRent :: Bool -> Picture 
+-- renderPayRent 
+
 --------------------------------
 -- Events
 --------------------------------
@@ -191,10 +206,19 @@ onEventGame e gs =
 onClick :: (Float, Float) -> GameState -> GameState
 onClick (x, y) gs
     -- Clicked on the Roll Dice Button
-    | x >= 110.0 && y >= 150.0 && x <= 260.0 && y <= 180.0 && not (getDieRolled gs) =
-        rollDie $
+    | not (getDieRolled gs) && x >= 110.0 && y >= 150.0 && x <= 260.0 && y <= 180.0 =
+        advanceCurrentPlayer $
         setDieRolled True $
+        rollDie $
         setDebugMessage ("(" ++ show x ++ "," ++ show y ++ ")") gs
+
+    -- Clicked on the Buy Button
+    | getPropertyBuyable gs && x >= -70 && y >= 190 && x <= 0 && y <= 220 = 
+        setDebugMessage ("(" ++ show x ++ "," ++ show y ++ ") buy") gs
+
+    -- Clicked on the Pass Button
+    | getPropertyBuyable gs && x >= 10 && y >= 190 && x <= 80 && y <= 220 = 
+        setDebugMessage ("(" ++ show x ++ "," ++ show y ++ ") pass") gs
 
     -- Useless click
     | otherwise = setDebugMessage ("(" ++ show x ++ "," ++ show y ++ ")") gs

@@ -38,7 +38,10 @@ module Monopoly
         getPlayerFunds,
         getTileLocation,
         getTileStates,
-        getCurrentPlayerID
+        getCurrentPlayerID,
+        getPropertyBuyable,
+        advanceCurrentPlayer,
+        getCurrentPropertyName
     ) where
 
 import System.Random
@@ -80,11 +83,12 @@ data PlayerState = PlayerState {
 -- | Board state for the entire game
 data BoardState = BoardState {
     tileModulus  :: BoardLocation,       -- ^ Largest identifier (in use) of tiles
-    tilesState      :: [TileState]          -- ^ List of all the tiles on the board
+    tilesState   :: [TileState]          -- ^ List of all the tiles on the board
 }
 
 -- | Tile state for an individual tile on the board
 data TileState = OwnableTileState {
+        name            :: String,              -- ^ Name of the property
         tileLocation    :: BoardLocation,       -- ^ Location of the tile on the board
         tileOwner       :: Maybe PlayerID,      -- ^ Owner of the tile
         value           :: Int,                 -- ^ Value of the tile
@@ -99,7 +103,10 @@ data TurnState = TurnState {
     dieRollNumber   :: Int,                 -- ^ Which turn this current turn is
     debugMessage    :: String,              -- ^ Extra debugging message to be printed to the board
     diceRolled      :: Bool,                -- ^ Whether or not the dice has been rolled
-    diceResult      :: (Int, Int)           -- ^ Resulting roll of the dice
+    diceResult      :: (Int, Int),          -- ^ Resulting roll of the dice
+    propertyBuyable :: Bool,                -- ^ Can buy property
+    turnComplete    :: Bool,                -- ^ Turn can be completed
+    rentToBePayed   :: Bool                -- ^ Whether we have to pay rent on the current tile
 }
 
 --------------------------------
@@ -183,6 +190,61 @@ getTileStates gs = tilesState (boardState gs)
 getCurrentPlayerID :: GameState -> PlayerID
 getCurrentPlayerID gs = playerIDTurn (playersState gs)
 
+-- | Get whether or not a property is buyable
+getPropertyBuyable :: GameState -> Bool
+getPropertyBuyable gs = propertyBuyable $ turnState gs
+
+-- | Advance the current player
+advanceCurrentPlayer :: GameState -> GameState
+advanceCurrentPlayer gs =
+    gs {
+        playersState = ps {
+            playerStates = replacePlayerState pid newPs pps
+        },
+        turnState = ts {
+            rentToBePayed = newRentToBePayed,
+            propertyBuyable = newPropertyBuyable,
+            turnComplete = newTurnComplete
+        }
+    } where
+        GameState ps bs ts = gs
+        TurnState _ _ _ diceResult _ _ _ = ts
+        BoardState tileModulus tts = bs
+        PlayersState pps pid = ps
+        PlayerState _ _ currentLocation _ = pps !! pid
+        (diceOne, diceTwo) = diceResult
+        newLocation = (currentLocation + diceOne + diceTwo) `mod` tileModulus
+        newPs = (pps !! pid) { currentLocation = newLocation }
+        tile = tts !! newLocation
+        newRentToBePayed = case tile of
+            OwnableTileState _ _ maybeOwner _ _ ->
+                case maybeOwner of
+                    Just owner -> owner == pid
+                    Nothing -> False
+            OtherTileState _ _ -> False
+        newPropertyBuyable = case tile of
+            OwnableTileState _ _ maybeOwner _ _ ->
+                case maybeOwner of
+                    Just owner -> False
+                    Nothing -> True
+            OtherTileState _ _ -> False
+        newTurnComplete = case tile of
+            OwnableTileState {} -> False
+            OtherTileState {} -> True
+
+
+-- | Get current property name
+getCurrentPropertyName :: GameState -> String
+getCurrentPropertyName gs =
+    case tile of
+        OwnableTileState tileName _ _ _ _ -> tileName
+        OtherTileState {} -> ""
+    where
+        pid = playerIDTurn $ playersState gs
+        ps = playerStates (playersState gs) !! pid
+        tid = currentLocation ps
+        tile = tilesState (boardState gs) !! tid
+
 
 --------------------------------
 -- Definitions
@@ -226,12 +288,14 @@ initialGameState = GameState {
                 fundDelta = 20
             },
             OwnableTileState {          -- Agronomy Road
+                name = "Agronomy Road",
                 tileLocation = 1,
                 tileOwner = Nothing,
                 value = 1,
                 rent = 1
             },
             OwnableTileState {          -- Wesbrook Mall
+                name = "Wesbrook Mall",
                 tileLocation = 2,
                 tileOwner = Nothing,
                 value = 3,
@@ -242,12 +306,14 @@ initialGameState = GameState {
                 fundDelta = 0
             },
             OwnableTileState {          -- Health Sciences Road
+                name = "Health Sciences Road",
                 tileLocation = 4,
                 tileOwner = Nothing,
                 value = 5,
                 rent = 3
             },
             OwnableTileState {          -- Engineering Road
+                name = "Engineering Road",
                 tileLocation = 5,
                 tileOwner = Nothing,
                 value = 7,
@@ -258,12 +324,14 @@ initialGameState = GameState {
                 fundDelta = -5
             },
             OwnableTileState {          -- Iona Road
+                name = "Iona Road",
                 tileLocation = 7,
                 tileOwner = Nothing,
                 value = 9,
                 rent = 5
             },
             OwnableTileState {          -- Wesbrook Mall
+                name = "Wesbrook Mall",
                 tileLocation = 8,
                 tileOwner = Nothing,
                 value = 11,
@@ -274,12 +342,14 @@ initialGameState = GameState {
                 fundDelta = 0
             },
             OwnableTileState {          -- University Boulevard
+                name = "University Boulevard",
                 tileLocation = 10,
                 tileOwner = Nothing,
                 value = 13,
                 rent = 7
             },
             OwnableTileState {          -- Main Mall
+                name = "Main Mall",
                 tileLocation = 11,
                 tileOwner = Nothing,
                 value = 15,
@@ -291,7 +361,9 @@ initialGameState = GameState {
         dieRollNumber = 0,
         debugMessage = "kemcho",
         diceRolled = False,
-        diceResult = (2, 3)
+        diceResult = (2, 3),
+        propertyBuyable = False,
+        rentToBePayed = False
     }
 }
 
