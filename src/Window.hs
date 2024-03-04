@@ -87,13 +87,13 @@ renderGame board die players gs = pictures [
     translate (-260) (-130) $ renderTurn gs,
 
     -- Buy & Pass Property Prompt
-    translate 0 205 $ renderBuyAndPassPrompt (getPropertyBuyable gs) (getCurrentPropertyName gs),
+    translate (-5) (205 + 15) $ renderBuyAndPassPrompt (getPropertyBuyable gs) (getCurrentPropertyName gs),
     
     -- Pay Rent Button
-    translate 0 205 $ renderPayRent $ getRentToBePayed gs,
+    translate 0 (205 + 20) $ renderPayRent $ getRentToBePayed gs,
     
     -- Next Turn Button
-    translate 0 205 $ renderNextTurn $ getTurnComplete gs ]
+    translate 0 (205 - 20) $ renderNextTurn $ getTurnComplete gs ]
 
 
 renderRollButton :: Bool -> Picture
@@ -229,22 +229,22 @@ onClick (x, y) gs
         setDebugMessage ("(" ++ show x ++ "," ++ show y ++ ")") gs
 
     -- Clicked on the Buy Button
-    | getPropertyBuyable gs && x >= -70 && y >= 190 && x <= 0 && y <= 220 = 
+    | getPropertyBuyable gs && x >= -75 && y >= 205 && x <= -5 && y <= 235 = 
         setDebugMessage ("(" ++ show x ++ "," ++ show y ++ ") buy") gs
 
     -- Clicked on the Pass Button
-    | getPropertyBuyable gs && x >= 10 && y >= 190 && x <= 80 && y <= 220 = 
+    | getPropertyBuyable gs && x >= 5 && y >= 205 && x <= 75 && y <= 235 = 
         setTurnComplete True $
         setPropertyBuyable False $
         setDebugMessage ("(" ++ show x ++ "," ++ show y ++ ") pass") gs
 
     -- Clicked on the Pay Rent Button
-    | getRentToBePayed gs && x >= -70 && y >= 190 && x <= 80 && y <= 220 = 
+    | getRentToBePayed gs && x >= -70 && y >= 210 && x <= 80 && y <= 240 = 
         currentPlayerPayRent $
         setDebugMessage ("(" ++ show x ++ "," ++ show y ++ ") pay") gs
 
     -- Clicked on Next Turn Button
-    | getTurnComplete gs && x >= -70 && y >= 190 && x <= 80 && y <= 220 = 
+    | getTurnComplete gs && x >= -70 && y >= 170 && x <= 80 && y <= 200 = 
         finishTurn $
         setDebugMessage ("(" ++ show x ++ "," ++ show y ++ ") next") gs
 
