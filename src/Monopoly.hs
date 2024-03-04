@@ -198,13 +198,13 @@ currentPlayerPass gameState@(GameState playersState _ _) =
     in gameState { playersState = playersState { playerIDTurn = newPlayerIDTurn } }
 
 -- | Buy a property for a player
-buyPropertyForPlayer :: PlayerID -> [PlayerState] -> [PlayerState]
-buyPropertyForPlayer _ [] = []
-buyPropertyForPlayer targetID (player:players)
+buyPropertyForPlayer :: PlayerID -> TileState -> [PlayerState] -> [PlayerState]
+buyPropertyForPlayer _ _ [] = []
+buyPropertyForPlayer targetID property (player:players)
     | identifier player == targetID =
-        let newProperties = 1 : propertiesOwned player -- Assuming '1' is the BoardLocation of the property bought
+        let newProperties = property : propertiesOwned player
         in player { propertiesOwned = newProperties } : players
-    | otherwise = player : buyPropertyForPlayer targetID players
+    | otherwise = player : buyPropertyForPlayer targetID property players
 
 -- | Update a player state
 updatePlayerState :: PlayerID -> [PlayerState] -> PlayersState
