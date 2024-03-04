@@ -84,14 +84,23 @@ renderGame board die players gs = pictures [
     renderOwnership $ getTileStates gs,
 
     -- Turn Indicator
-    translate (-260) (-130) $ renderTurn gs ]
+    translate (-260) (-130) $ renderTurn gs,
+
+    -- Buy & Pass Property Prompt
+    translate (-5) (205 + 15) $ renderBuyAndPassPrompt (getPropertyBuyable gs) (currentPlayerCanBuy gs) (getCurrentPropertyName gs),
+    
+    -- Pay Rent Button
+    translate 0 (205 + 20) $ renderPayRent $ getRentToBePayed gs,
+    
+    -- Next Turn Button
+    translate 0 (205 - 20) $ renderNextTurn $ getTurnComplete gs ]
+
 
 renderRollButton :: Bool -> Picture
 renderRollButton False = blank
 renderRollButton True = pictures [
     color (greyN 0.5) $ rectangleSolid 150 30,
-    translate (-60) (-5) $ color white $ scale 0.15 0.15 $ text "Roll the Die!"
-    ]
+    translate (-60) (-5) $ color white $ scale 0.15 0.15 $ text "Roll the Die!" ]
 
 renderDie :: [Picture] -> (Int, Int) -> Picture
 renderDie die (a, b) = pictures [
@@ -134,10 +143,10 @@ playerShift :: Float
 playerShift = 30
 
 mapPlayerToShift :: PlayerID -> Picture -> Picture
-mapPlayerToShift 0 pic = translate playerShift (-playerShift) pic
+mapPlayerToShift 0 pic = translate (-playerShift) playerShift pic
 mapPlayerToShift 1 pic = translate playerShift playerShift pic
 mapPlayerToShift 2 pic = translate (-playerShift) (-playerShift) pic
-mapPlayerToShift 3 pic = translate (-playerShift) playerShift pic
+mapPlayerToShift 3 pic = translate playerShift (-playerShift) pic
 mapPlayerToShift _ _ = blank
 
 renderFunds :: [Picture] -> [PlayerState] -> Picture
@@ -152,7 +161,7 @@ renderOwnership :: [TileState] -> Picture
 renderOwnership [] = blank
 renderOwnership (ts:tss) = pictures [
     case ts of
-        OwnableTileState tid owner _ _ ->
+        OwnableTileState _ tid owner _ _ ->
             case owner of
                 Just pid -> let (x, y) = mapBoardLocation2Position4OwnerPos tid in
                     translate x y $ scale 0.1 0.1 $ text ("Owned by Player " ++ show pid)
@@ -175,6 +184,33 @@ renderTurn :: GameState -> Picture
 renderTurn gs = let pid = getCurrentPlayerID gs in
     scale 0.25 0.25 $ text ("It's Player " ++ show pid ++ "'s turn.")
 
+renderBuyAndPassPrompt :: Bool -> Bool -> String -> Picture
+renderBuyAndPassPrompt False _ _ = blank
+renderBuyAndPassPrompt True False tileName = pictures [
+    translate (-70) 30 $ scale 0.125 0.125 $ text tileName,
+    translate (80 - 35) 0 $ color (greyN 0.5) $ rectangleSolid 70 30,
+    translate 20 (-5) $ color white $ scale 0.15 0.15 $ text "Pass" ]
+renderBuyAndPassPrompt True True tileName = pictures [
+    translate (-70) 30 $ scale 0.125 0.125 $ text tileName,
+    translate (-35) 0 $ color (greyN 0.5) $ rectangleSolid 70 30,
+    translate (-60) (-5) $ color white $ scale 0.15 0.15 $ text "Buy",
+    translate (80 - 35) 0 $ color (greyN 0.5) $ rectangleSolid 70 30,
+    translate 20 (-5) $ color white $ scale 0.15 0.15 $ text "Pass" ]
+renderBuyAndPassPrompt _ _ _ = blank
+
+renderPayRent :: Bool -> Picture
+renderPayRent False = blank
+renderPayRent True = pictures [
+    color (greyN 0.5) $ rectangleSolid 150 30,
+    translate (-60) (-5) $ color white $ scale 0.15 0.15 $ text "Pay Rent" ]
+
+renderNextTurn :: Bool -> Picture
+renderNextTurn False = blank
+renderNextTurn True = pictures [
+    color (greyN 0.5) $ rectangleSolid 150 30,
+    translate (-60) (-5) $ color white $ scale 0.15 0.15 $ text "Next Turn" ]
+
+
 --------------------------------
 -- Events
 --------------------------------
@@ -185,16 +221,38 @@ onEventGame e gs =
         EventKey key _ _ point ->
             case key of
                 MouseButton _ -> onClick point gs
-                otherwise -> gs
-        otherwise -> gs
+                _ -> gs
+        _ -> gs
 
 onClick :: (Float, Float) -> GameState -> GameState
 onClick (x, y) gs
     -- Clicked on the Roll Dice Button
-    | x >= 110.0 && y >= 150.0 && x <= 260.0 && y <= 180.0 && not (getDieRolled gs) =
-        rollDie $
+    | not (getDieRolled gs) && x >= 110.0 && y >= 150.0 && x <= 260.0 && y <= 180.0 =
+        advanceCurrentPlayer $
         setDieRolled True $
+        rollDie $
         setDebugMessage ("(" ++ show x ++ "," ++ show y ++ ")") gs
+
+    -- Clicked on the Buy Button
+    | currentPlayerCanBuy gs && getPropertyBuyable gs && x >= -75 && y >= 205 && x <= -5 && y <= 235 =
+        currentPlayerBuy $ 
+        setDebugMessage ("(" ++ show x ++ "," ++ show y ++ ") buy") gs
+
+    -- Clicked on the Pass Button
+    | getPropertyBuyable gs && x >= 5 && y >= 205 && x <= 75 && y <= 235 = 
+        setTurnComplete True $
+        setPropertyBuyable False $
+        setDebugMessage ("(" ++ show x ++ "," ++ show y ++ ") pass") gs
+
+    -- Clicked on the Pay Rent Button
+    | getRentToBePayed gs && x >= -70 && y >= 210 && x <= 80 && y <= 240 = 
+        currentPlayerPayRent $
+        setDebugMessage ("(" ++ show x ++ "," ++ show y ++ ") pay") gs
+
+    -- Clicked on Next Turn Button
+    | getTurnComplete gs && x >= -70 && y >= 170 && x <= 80 && y <= 200 = 
+        finishTurn $
+        setDebugMessage ("(" ++ show x ++ "," ++ show y ++ ") next") gs
 
     -- Useless click
     | otherwise = setDebugMessage ("(" ++ show x ++ "," ++ show y ++ ")") gs
