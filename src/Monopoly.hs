@@ -40,11 +40,15 @@ module Monopoly
         getTileStates,
         getCurrentPlayerID,
         getPropertyBuyable,
+        setPropertyBuyable,
         advanceCurrentPlayer,
         getCurrentPropertyName,
         getRentToBePayed,
+        setRentToBePayed,
         getTurnComplete,
-        currentPlayerPayRent
+        setTurnComplete,
+        currentPlayerPayRent,
+        finishTurn
     ) where
 
 import System.Random
@@ -128,7 +132,7 @@ findPlayerByID id (p:ps)
 replacePlayerState :: PlayerID -> PlayerState -> [PlayerState] -> [PlayerState]
 replacePlayerState _ _ [] = []
 replacePlayerState playerID newPlayerState (p:ps)
-    | identifier p == playerID = (newPlayerState:ps)
+    | identifier p == playerID = newPlayerState:ps
     | otherwise = p : replacePlayerState playerID newPlayerState ps
 
 -- | Get the debug message from the game state
@@ -197,6 +201,13 @@ getCurrentPlayerID gs = playerIDTurn (playersState gs)
 getPropertyBuyable :: GameState -> Bool
 getPropertyBuyable gs = propertyBuyable $ turnState gs
 
+-- | Get whether or not a property is buyable
+setPropertyBuyable :: Bool -> GameState -> GameState
+setPropertyBuyable b gs = gs {
+    turnState = (turnState gs) {
+        propertyBuyable = b
+    }
+}
 -- | Advance the current player
 advanceCurrentPlayer :: GameState -> GameState
 advanceCurrentPlayer gs =
@@ -232,7 +243,10 @@ advanceCurrentPlayer gs =
                     Nothing -> True
             OtherTileState _ _ -> False
         newTurnComplete = case tile of
-            OwnableTileState {} -> False
+            OwnableTileState _ _ maybeOwner _ _ ->
+                case maybeOwner of
+                    Just owner -> owner == pid
+                    Nothing -> False
             OtherTileState {} -> True
 
 
@@ -252,9 +266,25 @@ getCurrentPropertyName gs =
 getRentToBePayed :: GameState -> Bool
 getRentToBePayed gs = rentToBePayed $ turnState gs
 
+-- | Set whether or not a property has rent to be payed
+setRentToBePayed :: Bool -> GameState -> GameState
+setRentToBePayed b gs = gs {
+    turnState = (turnState gs) {
+        rentToBePayed = b
+    }
+}
+
 -- | Get whether or not the turn can be completed
 getTurnComplete :: GameState -> Bool
 getTurnComplete gs = turnComplete $ turnState gs
+
+-- | Set whether or not the turn can be completed
+setTurnComplete :: Bool -> GameState -> GameState
+setTurnComplete b gs = gs {
+    turnState = (turnState gs) {
+        turnComplete = b
+    }
+}
 
 -- | Current player pays rent
 currentPlayerPayRent :: GameState -> GameState
@@ -270,8 +300,7 @@ currentPlayerPayRent gs =
             rentToBePayed = False,
             turnComplete = True
         }
-    }
-    where
+    } where
         renterID = playerIDTurn $ playersState gs
         renterPS = playerStates (playersState gs) !! renterID
         renterFunds = funds renterPS
@@ -281,6 +310,24 @@ currentPlayerPayRent gs =
         ownerPS = playerStates (playersState gs) !! ownerID
         ownerFunds = funds ownerPS
         rentCost = rent tile
+
+-- | Current player finishes turn
+finishTurn :: GameState -> GameState
+finishTurn gs =
+    gs {
+        playersState = (playersState gs) {
+            playerIDTurn = (1 + playerIDTurn (playersState gs)) `mod` length (playerStates $ playersState gs)
+        },
+        turnState = (turnState gs) {
+            dieRollNumber = 1 + dieRollNumber (turnState gs),
+            debugMessage = "kemcho",
+            diceRolled = False,
+            propertyBuyable = False,
+            rentToBePayed = False,
+            turnComplete = False
+        }
+    }
+
 
 --------------------------------
 -- Definitions
@@ -380,7 +427,7 @@ initialGameState = GameState {
             OwnableTileState {          -- University Boulevard
                 name = "University Boulevard",
                 tileLocation = 10,
-                tileOwner = Just 1,
+                tileOwner = Just 0,
                 value = 13,
                 rent = 7
             },

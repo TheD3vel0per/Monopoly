@@ -234,12 +234,19 @@ onClick (x, y) gs
 
     -- Clicked on the Pass Button
     | getPropertyBuyable gs && x >= 10 && y >= 190 && x <= 80 && y <= 220 = 
+        setTurnComplete True $
+        setPropertyBuyable False $
         setDebugMessage ("(" ++ show x ++ "," ++ show y ++ ") pass") gs
 
     -- Clicked on the Pay Rent Button
     | getRentToBePayed gs && x >= -70 && y >= 190 && x <= 80 && y <= 220 = 
         currentPlayerPayRent $
         setDebugMessage ("(" ++ show x ++ "," ++ show y ++ ") pay") gs
+
+    -- Clicked on Next Turn Button
+    | getTurnComplete gs && x >= -70 && y >= 190 && x <= 80 && y <= 220 = 
+        finishTurn $
+        setDebugMessage ("(" ++ show x ++ "," ++ show y ++ ") next") gs
 
     -- Useless click
     | otherwise = setDebugMessage ("(" ++ show x ++ "," ++ show y ++ ")") gs
