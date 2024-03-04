@@ -1,4 +1,4 @@
-# Monopoly Haskell Implementation
+# Monopoly
 
 ## Overview
 
